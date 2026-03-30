@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard iFOBT (2024-2026) | JKN Kedah</title>
+    <meta name="description" content="Dashboard Pemantauan Penggunaan & Baki Stok iFOBT Mengikut Daerah - JKN Kedah">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg-primary: #f8f6ff;
+            --bg-secondary: #eee9fc;
+            --bg-card: rgba(255, 255, 255, 0.85);
+            --bg-card-hover: rgba(255, 255, 255, 0.95);
+            --border-card: rgba(139, 92, 246, 0.25);
+            --border-card-hover: rgba(139, 92, 246, 0.5);
+            --text-primary: #3b0764;
+            --text-secondary: #581c87;
+            --text-muted: #7e22ce;
+            --accent-blue: #6366f1;
+            --accent-cyan: #22d3ee;
+            --accent-emerald: #34d399;
+            --accent-amber: #fbbf24;
+            --accent-rose: #fb7185;
+            --accent-purple: #a78bfa;
+            --gradient-1: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);
+            --gradient-2: linear-gradient(135deg, #22d3ee 0%, #34d399 100%);
+            --gradient-3: linear-gradient(135deg, #f59e0b 0%, #fb7185 100%);
+            --shadow-card: 0 4px 30px rgba(0, 0, 0, 0.3);
+            --shadow-glow: 0 0 40px rgba(99, 102, 241, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background gradient orbs */
+        .bg-orbs {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        .bg-orbs::before, .bg-orbs::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.15;
+            animation: float 20s ease-in-out infinite;
+        }
+        .bg-orbs::before {
+            width: 600px; height: 600px;
+            background: var(--accent-blue);
+            top: -200px; right: -100px;
+        }
+        .bg-orbs::after {
+            width: 500px; height: 500px;
+            background: var(--accent-cyan);
+            bottom: -150px; left: -100px;
+            animation-delay: -10s;
+            animation-direction: reverse;
+        }
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(60px, -40px) scale(1.1); }
+            66% { transform: translate(-40px, 30px) scale(0.9); }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 40px 32px;
+            margin-bottom: 32px;
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-card);
+            border-radius: 20px;
+            box-shadow: var(--shadow-card), var(--shadow-glow);
+            position: relative;
+            overflow: hidden;
+        }
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: var(--gradient-1);
+        }
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.02em;
+        }
+        .header p {
+            color: var(--text-secondary);
+            margin-top: 8px;
+            font-size: 0.95rem;
+            font-weight: 400;
+        }
+        .header .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 16px;
+            padding: 6px 16px;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            border-radius: 100px;
+            font-size: 0.75rem;
+            color: var(--accent-purple);
+            font-weight: 500;
+        }
+        .badge .dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: var(--accent-emerald);
+            animation: pulse-dot 2s ease-in-out infinite;
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        /* Summary cards */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        .summary-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-card);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .summary-card:hover {
+            border-color: var(--border-card-hover);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-card);
+        }
+        .summary-card .label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .summary-card .value {
+            font-size: 1.75rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+        .summary-card .sub {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        .summary-card.blue .value { color: var(--accent-blue); }
+        .summary-card.cyan .value { color: var(--accent-cyan); }
+        .summary-card.emerald .value { color: var(--accent-emerald); }
+        .summary-card.amber .value { color: var(--accent-amber); }
+        .summary-card.rose .value { color: var(--accent-rose); }
+        .summary-card.purple .value { color: var(--accent-purple); }
+
+        /* Charts grid */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        @media (max-width: 900px) {
+            .charts-grid { grid-template-columns: 1fr; }
+            .header h1 { font-size: 1.4rem; }
+            .summary-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 500px) {
+            .container { padding: 12px; }
+            .summary-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+            .summary-card { padding: 16px; }
+            .summary-card .value { font-size: 1.3rem; }
+        }
+
+        .chart-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-card);
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: var(--shadow-card);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .chart-card:hover {
+            border-color: var(--border-card-hover);
+        }
+        .chart-card h2 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-bottom: 20px;
+            letter-spacing: -0.01em;
+        }
+        .chart-card.full-width {
+            grid-column: 1 / -1;
+        }
+
+        /* Table styling */
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid var(--border-card);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+        th {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--accent-purple);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.7rem;
+            padding: 12px 16px;
+            text-align: left;
+            white-space: nowrap;
+        }
+        td {
+            padding: 10px 16px;
+            border-top: 1px solid rgba(139, 92, 246, 0.1);
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+        tr:hover td {
+            background: rgba(99, 102, 241, 0.04);
+        }
+        tr:last-child td {
+            font-weight: 700;
+            color: var(--text-primary);
+            background: rgba(99, 102, 241, 0.06);
+        }
+        td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+        /* Loading overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--bg-primary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+        .loading-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        .spinner {
+            width: 48px; height: 48px;
+            border: 3px solid rgba(99, 102, 241, 0.2);
+            border-top-color: var(--accent-blue);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text {
+            margin-top: 16px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        /* Error state */
+        .error-banner {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 12px;
+            padding: 16px 24px;
+            margin-bottom: 24px;
+            color: #fca5a5;
+            font-size: 0.85rem;
+            display: none;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 24px;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+        }
+        .footer a {
+            color: var(--accent-purple);
+            text-decoration: none;
+        }
+
+        /* Fade-in animation for cards */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(16px);
+            animation: fadeIn 0.6s ease forwards;
+        }
+        @keyframes fadeIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in:nth-child(1) { animation-delay: 0.05s; }
+        .fade-in:nth-child(2) { animation-delay: 0.1s; }
+        .fade-in:nth-child(3) { animation-delay: 0.15s; }
+        .fade-in:nth-child(4) { animation-delay: 0.2s; }
+        .fade-in:nth-child(5) { animation-delay: 0.25s; }
+        .fade-in:nth-child(6) { animation-delay: 0.3s; }
+
+        /* Last updated timestamp */
+        .timestamp {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 8px;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+        .timestamp svg { width: 12px; height: 12px; }
+
+        /* Baki bar indicator */
+        .baki-bar {
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(139, 92, 246, 0.15);
+            margin-top: 6px;
+            overflow: hidden;
+        }
+        .baki-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 1s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-orbs"></div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text">Memuatkan data dari Google Sheets...</div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="header" id="header">
+            <div style="margin-bottom: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <img src="LOGO_KOSPEN.jpg" alt="Logo KOSPEN" style="height: 100px; width: auto; margin-bottom: 16px; border-radius: 8px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.08));">
+                <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.05em; margin: 0;">Jabatan Kesihatan Negeri Kedah</h2>
+            </div>
+            <h1>DASHBOARD PENGGUNAAN & BAKI iFOBT</h1>
+            <p>Pemantauan Stok Fasiliti Kesihatan Negeri Kedah</p>
+            <div class="badge">
+                <span class="dot"></span>
+                Data Langsung dari Google Sheets
+            </div>
+            <div class="timestamp" id="lastUpdated">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                <span>Memuat...</span>
+            </div>
+        </header>
+
+        <!-- Error Banner -->
+        <div class="error-banner" id="errorBanner"></div>
+
+        <!-- Summary Cards -->
+        <div class="summary-grid" id="summaryGrid">
+            <div class="summary-card blue fade-in" id="cardStok2024">
+                <div class="label">Stok 2024</div>
+                <div class="value" id="valStok2024">—</div>
+                <div class="sub">Jumlah keseluruhan</div>
+            </div>
+            <div class="summary-card cyan fade-in" id="cardStok2025">
+                <div class="label">Stok 2025</div>
+                <div class="value" id="valStok2025">—</div>
+                <div class="sub">Jumlah keseluruhan</div>
+            </div>
+            <div class="summary-card emerald fade-in" id="cardStok2026">
+                <div class="label">Stok 2026</div>
+                <div class="value" id="valStok2026">—</div>
+                <div class="sub">Jumlah keseluruhan</div>
+            </div>
+            <div class="summary-card amber fade-in" id="cardGuna2025">
+                <div class="label">Penggunaan 2025</div>
+                <div class="value" id="valGuna2025">—</div>
+                <div class="sub">Sepanjang tahun</div>
+            </div>
+            <div class="summary-card rose fade-in" id="cardGuna2026">
+                <div class="label">Penggunaan 2026</div>
+                <div class="value" id="valGuna2026">—</div>
+                <div class="sub" id="subGuna2026">Setakat ini</div>
+            </div>
+            <div class="summary-card purple fade-in" id="cardBaki">
+                <div class="label">Baki Semasa 2026</div>
+                <div class="value" id="valBaki2026">—</div>
+                <div class="sub">Stok semasa di PKD</div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-grid">
+            <!-- Chart 1: Overall Comparison -->
+            <div class="chart-card fade-in" id="chartCard1">
+                <h2>📊 Rumusan Keseluruhan: Stok vs Penggunaan vs Baki</h2>
+                <canvas id="chartKeseluruhan"></canvas>
+            </div>
+
+            <!-- Chart 2: Monthly Trend -->
+            <div class="chart-card fade-in" id="chartCard2">
+                <h2>📈 Trend Penggunaan Bulanan (2025 vs 2026)</h2>
+                <canvas id="chartTrend"></canvas>
+            </div>
+
+            <!-- Chart 3: District 2025 -->
+            <div class="chart-card fade-in" id="chartCard3">
+                <h2>🏥 Stok vs Penggunaan Mengikut Daerah — 2025</h2>
+                <canvas id="chartDaerah2025"></canvas>
+            </div>
+
+            <!-- Chart 4: District 2026 -->
+            <div class="chart-card fade-in" id="chartCard4">
+                <h2>🏥 Stok vs Penggunaan Mengikut Daerah — 2026</h2>
+                <canvas id="chartDaerah2026"></canvas>
+            </div>
+
+            <!-- Chart 5: Baki comparison -->
+            <div class="chart-card fade-in" id="chartCard5">
+                <h2>📉 Perbandingan Baki Stok Semasa Mengikut Daerah (2025 vs 2026)</h2>
+                <canvas id="chartBaki"></canvas>
+            </div>
+
+            <!-- Chart 6: Donut - Usage ratio 2026 -->
+            <div class="chart-card fade-in" id="chartCard6">
+                <h2>🎯 Nisbah Penggunaan vs Baki — 2026</h2>
+                <canvas id="chartDonut2026"></canvas>
+            </div>
+
+            <!-- Table: Full detail -->
+            <div class="chart-card full-width fade-in" id="tableCard">
+                <h2>📋 Jadual Terperinci — 2026 (Mengikut Bulan)</h2>
+                <div class="table-wrapper" id="tableWrapper">
+                    <p style="text-align:center; color: var(--text-muted); padding: 40px;">Memuatkan jadual...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            &copy; 2026 Pemantauan iFOBT — <a href="https://docs.google.com/spreadsheets/d/1QuIJkvtyRHAJVGIArRb5W1UwyTxAfhAN0Iydw8Cs8Og/edit" target="_blank" rel="noopener">Sumber Data Google Sheets</a>
+        </footer>
+    </div>
+
+    <script>
+    // ============================================================
+    // CONFIG: Google Sheets CSV export URLs
+    // ============================================================
+    const SPREADSHEET_ID = '1QuIJkvtyRHAJVGIArRb5W1UwyTxAfhAN0Iydw8Cs8Og';
+    const SHEETS = {
+        '2024': { gid: '0' },
+        '2025': { gid: '1888588564' },
+        '2026': { gid: '1668827922' }
+    };
+
+    function csvUrl(gid) {
+        // Use gviz/tq endpoint — has proper CORS headers and works from file:// protocol
+        return `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&gid=${gid}`;
+    }
+
+    // ============================================================
+    // CSV PARSER
+    // ============================================================
+    function parseCSV(text) {
+        const rows = [];
+        let current = '';
+        let inQuotes = false;
+        const chars = text.replace(/\r/g, '');
+
+        for (let i = 0; i < chars.length; i++) {
+            const c = chars[i];
+            if (c === '"') {
+                if (inQuotes && chars[i+1] === '"') {
+                    current += '"';
+                    i++;
+                } else {
+                    inQuotes = !inQuotes;
+                }
+            } else if (c === ',' && !inQuotes) {
+                rows.length === 0 ? rows.push([current]) : rows[rows.length-1].push(current);
+                current = '';
+            } else if (c === '\n' && !inQuotes) {
+                if (rows.length === 0) rows.push([]);
+                rows[rows.length-1].push(current);
+                current = '';
+                rows.push([]);
+            } else {
+                current += c;
+            }
+        }
+        // last field
+        if (rows.length === 0) rows.push([]);
+        rows[rows.length-1].push(current);
+
+        return rows.filter(r => r.some(c => c.trim() !== ''));
+    }
+
+    function num(v) {
+        if (!v) return 0;
+        const n = parseFloat(String(v).replace(/[^0-9.\-]/g, ''));
+        return isNaN(n) ? 0 : n;
+    }
+
+    function fmt(n) {
+        return n.toLocaleString('ms-MY');
+    }
+
+    // ============================================================
+    // DATA PARSERS for each sheet
+    // ============================================================
+    function parse2024(rows) {
+        // Find data rows: rows that start with ,<number>,<district name>
+        const districts = [];
+        let totals = null;
+        for (const row of rows) {
+            // The BIL column is index 1
+            const bil = num(row[1]);
+            const name = (row[2] || '').trim();
+            if (bil >= 1 && bil <= 11 && name) {
+                districts.push({
+                    daerah: name,
+                    cfTahunLepas: num(row[3]),
+                    terima: num(row[4]),
+                    jumlahStok: num(row[5]),
+                    penggunaan: num(row[7]), // PENGGUNAAN SEHINGGA 26/12/2024
+                    baki: num(row[8])
+                });
+            }
+            if (bil === 12 || name === 'JUMLAH') {
+                totals = {
+                    cfTahunLepas: num(row[3]),
+                    terima: num(row[4]),
+                    jumlahStok: num(row[5]),
+                    penggunaan: num(row[7]),
+                    baki: num(row[8])
+                };
+            }
+        }
+        return { districts, totals };
+    }
+
+    function parseYearly(rows) {
+        // For 2025 and 2026 sheets with monthly columns
+        // Headers row: BIL, DAERAH, C/F, TERIMA, JUMLAH STOK, JAN..DIS, BAKI, CATATAN
+        const months = ['JAN','FEB','MAC','APR','MEI','JUN','JUL','OGO','SEP','OKT','NOV','DIS'];
+        const districts = [];
+        let totals = null;
+
+        for (const row of rows) {
+            const bil = num(row[1]);
+            const name = (row[2] || '').trim();
+            if (bil >= 1 && bil <= 11 && name) {
+                const monthly = [];
+                for (let m = 0; m < 12; m++) {
+                    monthly.push(num(row[6 + m]));
+                }
+                const totalUsage = monthly.reduce((a, b) => a + b, 0);
+                districts.push({
+                    daerah: name,
+                    cfTahunLepas: num(row[3]),
+                    terima: num(row[4]),
+                    jumlahStok: num(row[5]),
+                    monthly,
+                    totalUsage,
+                    bakiSemasa: num(row[18])
+                });
+            }
+            if (bil === 12 || name === 'JUMLAH') {
+                const monthly = [];
+                for (let m = 0; m < 12; m++) {
+                    monthly.push(num(row[6 + m]));
+                }
+                totals = {
+                    cfTahunLepas: num(row[3]),
+                    terima: num(row[4]),
+                    jumlahStok: num(row[5]),
+                    monthly,
+                    totalUsage: monthly.reduce((a, b) => a + b, 0),
+                    bakiSemasa: num(row[18])
+                };
+            }
+        }
+        return { districts, totals, months };
+    }
+
+    // ============================================================
+    // CHART.JS GLOBAL CONFIG
+    // ============================================================
+    Chart.defaults.color = '#581c87';
+    Chart.defaults.borderColor = 'rgba(139, 92, 246, 0.1)';
+    Chart.defaults.font.family = "'Inter', sans-serif";
+    Chart.defaults.font.size = 11;
+    Chart.defaults.plugins.legend.labels.usePointStyle = true;
+    Chart.defaults.plugins.legend.labels.pointStyleWidth = 10;
+    Chart.defaults.plugins.legend.labels.padding = 16;
+    Chart.defaults.animation.duration = 1200;
+    Chart.defaults.animation.easing = 'easeOutQuart';
+
+    // Store chart instances for potential updates
+    const charts = {};
+
+    // ============================================================
+    // RENDER FUNCTIONS
+    // ============================================================
+    function renderSummary(data2024, data2025, data2026) {
+        const t24 = data2024.totals;
+        const t25 = data2025.totals;
+        const t26 = data2026.totals;
+
+        document.getElementById('valStok2024').textContent = fmt(t24.jumlahStok);
+        document.getElementById('valStok2025').textContent = fmt(t25.jumlahStok);
+        document.getElementById('valStok2026').textContent = fmt(t26.jumlahStok);
+        document.getElementById('valGuna2025').textContent = fmt(t25.totalUsage);
+        document.getElementById('valGuna2026').textContent = fmt(t26.totalUsage);
+        document.getElementById('valBaki2026').textContent = fmt(t26.bakiSemasa);
+
+        // Determine which months have data for 2026
+        const activeMonths2026 = [];
+        const monthNames = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogo','Sep','Okt','Nov','Dis'];
+        t26.monthly.forEach((v, i) => { if (v > 0) activeMonths2026.push(monthNames[i]); });
+        if (activeMonths2026.length > 0) {
+            document.getElementById('subGuna2026').textContent = `Setakat ${activeMonths2026[activeMonths2026.length - 1]} 2026`;
+        }
+    }
+
+    function renderChartKeseluruhan(data2024, data2025, data2026) {
+        const t24 = data2024.totals;
+        const t25 = data2025.totals;
+        const t26 = data2026.totals;
+
+        // Determine label for 2026 based on active months
+        const monthNames = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogo','Sep','Okt','Nov','Dis'];
+        const lastActiveMonth2026 = t26.monthly.reduce((last, v, i) => v > 0 ? i : last, -1);
+        const label2026 = lastActiveMonth2026 >= 0 ? `2026 (Stkt ${monthNames[lastActiveMonth2026]})` : '2026';
+
+        const ctx = document.getElementById('chartKeseluruhan').getContext('2d');
+        charts.keseluruhan = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['2024', '2025', label2026],
+                datasets: [
+                    {
+                        label: 'Jumlah Stok',
+                        data: [t24.jumlahStok, t25.jumlahStok, t26.jumlahStok],
+                        backgroundColor: 'rgba(99, 102, 241, 0.7)',
+                        borderColor: '#6366f1',
+                        borderWidth: 1,
+                        borderRadius: 6
+                    },
+                    {
+                        label: 'Penggunaan',
+                        data: [t24.penggunaan, t25.totalUsage, t26.totalUsage],
+                        backgroundColor: 'rgba(251, 113, 133, 0.7)',
+                        borderColor: '#fb7185',
+                        borderWidth: 1,
+                        borderRadius: 6
+                    },
+                    {
+                        label: 'Baki',
+                        data: [t24.baki, t25.bakiSemasa, t26.bakiSemasa],
+                        backgroundColor: 'rgba(52, 211, 153, 0.7)',
+                        borderColor: '#34d399',
+                        borderWidth: 1,
+                        borderRadius: 6
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: {
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        borderColor: 'rgba(99,102,241,0.3)',
+                        borderWidth: 1,
+                        padding: 12,
+                        callbacks: {
+                            label: ctx => `${ctx.dataset.label}: ${fmt(ctx.parsed.y)}`
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(139, 92, 246, 0.08)' },
+                        ticks: { callback: v => fmt(v) }
+                    },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    function renderChartTrend(data2025, data2026) {
+        const monthLabels = ['Jan', 'Feb', 'Mac', 'Apr', 'Mei', 'Jun', 'Jul', 'Ogo', 'Sep', 'Okt', 'Nov', 'Dis'];
+        const t25 = data2025.totals;
+        const t26 = data2026.totals;
+
+        // For 2026, show null for months with no data
+        const data2026Monthly = t26.monthly.map(v => v > 0 ? v : null);
+        // But also check: if all values from a certain month onward are 0, they're future
+        let lastActive = -1;
+        for (let i = 11; i >= 0; i--) {
+            if (t26.monthly[i] > 0) { lastActive = i; break; }
+        }
+        const trend2026 = t26.monthly.map((v, i) => i <= lastActive ? v : null);
+
+        const ctx = document.getElementById('chartTrend').getContext('2d');
+        charts.trend = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: monthLabels,
+                datasets: [
+                    {
+                        label: '2025',
+                        data: t25.monthly,
+                        borderColor: '#fbbf24',
+                        backgroundColor: 'rgba(251, 191, 36, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointHoverRadius: 7,
+                        pointBackgroundColor: '#fbbf24',
+                        borderWidth: 2.5
+                    },
+                    {
+                        label: '2026',
+                        data: trend2026,
+                        borderColor: '#a78bfa',
+                        backgroundColor: 'rgba(167, 139, 250, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                        pointBackgroundColor: '#a78bfa',
+                        borderWidth: 2.5,
+                        borderDash: [5, 3]
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: {
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        borderColor: 'rgba(99,102,241,0.3)',
+                        borderWidth: 1,
+                        padding: 12,
+                        callbacks: {
+                            label: ctx => ctx.parsed.y !== null ? `${ctx.dataset.label}: ${fmt(ctx.parsed.y)}` : ''
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(139, 92, 246, 0.08)' },
+                        ticks: { callback: v => fmt(v) }
+                    },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    function renderChartDaerah(canvasId, data, year, colorStok, colorGuna) {
+        const labels = data.districts.map(d => d.daerah);
+        const stokData = data.districts.map(d => d.jumlahStok);
+        const gunaData = data.districts.map(d => year === '2024' ? d.penggunaan : d.totalUsage);
+
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        charts[canvasId] = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: `Stok (${year})`,
+                        data: stokData,
+                        backgroundColor: colorStok,
+                        borderRadius: 4,
+                        borderWidth: 0
+                    },
+                    {
+                        label: `Penggunaan (${year})`,
+                        data: gunaData,
+                        backgroundColor: colorGuna,
+                        borderRadius: 4,
+                        borderWidth: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: {
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        borderColor: 'rgba(99,102,241,0.3)',
+                        borderWidth: 1,
+                        padding: 12,
+                        callbacks: {
+                            label: ctx => `${ctx.dataset.label}: ${fmt(ctx.parsed.y)}`
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(139, 92, 246, 0.08)' },
+                        ticks: { callback: v => fmt(v) }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { maxRotation: 45, minRotation: 45, font: { size: 10 } }
+                    }
+                }
+            }
+        });
+    }
+
+    function renderChartBaki(data2025, data2026) {
+        const labels = data2025.districts.map(d => d.daerah);
+        const baki25 = data2025.districts.map(d => d.bakiSemasa);
+        const baki26 = data2026.districts.map(d => d.bakiSemasa);
+
+        const ctx = document.getElementById('chartBaki').getContext('2d');
+        charts.baki = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: 'Baki 2025',
+                        data: baki25,
+                        backgroundColor: 'rgba(251, 191, 36, 0.6)',
+                        borderColor: '#fbbf24',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Baki 2026',
+                        data: baki26,
+                        backgroundColor: 'rgba(34, 211, 238, 0.6)',
+                        borderColor: '#22d3ee',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: {
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        borderColor: 'rgba(99,102,241,0.3)',
+                        borderWidth: 1,
+                        padding: 12,
+                        callbacks: {
+                            label: ctx => `${ctx.dataset.label}: ${fmt(ctx.parsed.y)}`
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(139, 92, 246, 0.08)' },
+                        ticks: { callback: v => fmt(v) }
+                    },
+                    x: {
+                        grid:{ display: false },
+                        ticks: { maxRotation: 45, minRotation: 45, font: { size: 10 } }
+                    }
+                }
+            }
+        });
+    }
+
+    function renderDonut2026(data2026) {
+        const t26 = data2026.totals;
+        const used = t26.totalUsage;
+        const remaining = t26.bakiSemasa;
+
+        const ctx = document.getElementById('chartDonut2026').getContext('2d');
+        charts.donut = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Penggunaan', 'Baki Semasa'],
+                datasets: [{
+                    data: [used, remaining],
+                    backgroundColor: [
+                        'rgba(251, 113, 133, 0.8)',
+                        'rgba(52, 211, 153, 0.8)'
+                    ],
+                    borderColor: [
+                        '#fb7185',
+                        '#34d399'
+                    ],
+                    borderWidth: 2,
+                    hoverOffset: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                cutout: '65%',
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: {
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        borderColor: 'rgba(99,102,241,0.3)',
+                        borderWidth: 1,
+                        padding: 12,
+                        callbacks: {
+                            label: function(ctx) {
+                                const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                const pct = ((ctx.parsed / total) * 100).toFixed(1);
+                                return `${ctx.label}: ${fmt(ctx.parsed)} (${pct}%)`;
+                            }
+                        }
+                    }
+                }
+            },
+            plugins: [{
+                id: 'centerText',
+                beforeDraw: function(chart) {
+                    const { width, height, ctx } = chart;
+                    ctx.save();
+                    const total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                    const pctUsed = ((chart.data.datasets[0].data[0] / total) * 100).toFixed(0);
+                    ctx.font = '700 1.5rem Inter, sans-serif';
+                    ctx.fillStyle = '#3b0764';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(`${pctUsed}%`, width / 2, height / 2 - 8);
+                    ctx.font = '400 0.65rem Inter, sans-serif';
+                    ctx.fillStyle = '#581c87';
+                    ctx.fillText('Digunakan', width / 2, height / 2 + 14);
+                    ctx.restore();
+                }
+            }]
+        });
+    }
+
+    function renderTable2026(data2026) {
+        const monthNames = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogo','Sep','Okt','Nov','Dis'];
+        // Determine active months
+        const t26 = data2026.totals;
+        let lastActive = -1;
+        for (let i = 11; i >= 0; i--) {
+            if (t26.monthly[i] > 0) { lastActive = i; break; }
+        }
+        const activeMonths = lastActive >= 0 ? monthNames.slice(0, lastActive + 1) : [];
+
+        let html = '<table><thead><tr>';
+        html += '<th>Daerah</th><th>C/F 2025</th><th>Terima JKN</th><th>Jum. Stok</th>';
+        activeMonths.forEach(m => html += `<th>${m}</th>`);
+        html += '<th>Jum. Guna</th><th>Baki</th>';
+        html += '</tr></thead><tbody>';
+
+        data2026.districts.forEach(d => {
+            html += '<tr>';
+            html += `<td>${d.daerah}</td>`;
+            html += `<td class="num">${fmt(d.cfTahunLepas)}</td>`;
+            html += `<td class="num">${fmt(d.terima)}</td>`;
+            html += `<td class="num">${fmt(d.jumlahStok)}</td>`;
+            for (let i = 0; i <= lastActive; i++) {
+                html += `<td class="num">${fmt(d.monthly[i])}</td>`;
+            }
+            html += `<td class="num" style="color:#fb7185;font-weight:600">${fmt(d.totalUsage)}</td>`;
+            html += `<td class="num" style="color:#34d399;font-weight:600">${fmt(d.bakiSemasa)}</td>`;
+            html += '</tr>';
+        });
+
+        // Totals row
+        html += '<tr>';
+        html += `<td>JUMLAH</td>`;
+        html += `<td class="num">${fmt(t26.cfTahunLepas)}</td>`;
+        html += `<td class="num">${fmt(t26.terima)}</td>`;
+        html += `<td class="num">${fmt(t26.jumlahStok)}</td>`;
+        for (let i = 0; i <= lastActive; i++) {
+            html += `<td class="num">${fmt(t26.monthly[i])}</td>`;
+        }
+        html += `<td class="num" style="color:#fb7185;font-weight:600">${fmt(t26.totalUsage)}</td>`;
+        html += `<td class="num" style="color:#34d399;font-weight:600">${fmt(t26.bakiSemasa)}</td>`;
+        html += '</tr>';
+
+        html += '</tbody></table>';
+        document.getElementById('tableWrapper').innerHTML = html;
+    }
+
+    // ============================================================
+    // MAIN: FETCH & RENDER
+    // ============================================================
+    async function fetchSheet(gid) {
+        const url = csvUrl(gid);
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error(`Gagal memuat sheet (GID: ${gid}), status: ${resp.status}`);
+        const text = await resp.text();
+        return parseCSV(text);
+    }
+
+    async function init() {
+        const overlay = document.getElementById('loadingOverlay');
+        const errorBanner = document.getElementById('errorBanner');
+
+        try {
+            // Fetch all three sheets in parallel
+            const [rows2024, rows2025, rows2026] = await Promise.all([
+                fetchSheet(SHEETS['2024'].gid),
+                fetchSheet(SHEETS['2025'].gid),
+                fetchSheet(SHEETS['2026'].gid)
+            ]);
+
+            const data2024 = parse2024(rows2024);
+            const data2025 = parseYearly(rows2025);
+            const data2026 = parseYearly(rows2026);
+
+            // Validate
+            if (!data2024.totals || !data2025.totals || !data2026.totals) {
+                throw new Error('Struktur data spreadsheet tidak dikenali. Sila pastikan format spreadsheet betul.');
+            }
+
+            // Render everything
+            renderSummary(data2024, data2025, data2026);
+            renderChartKeseluruhan(data2024, data2025, data2026);
+            renderChartTrend(data2025, data2026);
+            renderChartDaerah('chartDaerah2025', data2025, '2025', 'rgba(99, 102, 241, 0.6)', 'rgba(251, 113, 133, 0.6)');
+            renderChartDaerah('chartDaerah2026', data2026, '2026', 'rgba(34, 211, 238, 0.6)', 'rgba(251, 191, 36, 0.6)');
+            renderChartBaki(data2025, data2026);
+            renderDonut2026(data2026);
+            renderTable2026(data2026);
+
+            // Update timestamp
+            const now = new Date();
+            document.querySelector('#lastUpdated span').textContent =
+                `Dikemas kini: ${now.toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric' })} ${now.toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit' })}`;
+
+        } catch (err) {
+            console.error('Error loading dashboard:', err);
+            errorBanner.style.display = 'block';
+            errorBanner.innerHTML = `
+                <strong>⚠ Ralat memuatkan data:</strong> ${err.message}<br>
+                <small>Pastikan spreadsheet Google Sheets boleh diakses secara awam (Share → Anyone with the link → Viewer).</small>
+            `;
+        } finally {
+            overlay.classList.add('hidden');
+        }
+    }
+
+    // Run on page load
+    document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
+
