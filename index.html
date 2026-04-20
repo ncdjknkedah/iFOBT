@@ -114,6 +114,7 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
             letter-spacing: -0.02em;
+            margin-top: 16px;
         }
         .header p {
             color: var(--text-secondary);
@@ -345,6 +346,8 @@
         .fade-in:nth-child(4) { animation-delay: 0.2s; }
         .fade-in:nth-child(5) { animation-delay: 0.25s; }
         .fade-in:nth-child(6) { animation-delay: 0.3s; }
+        .fade-in:nth-child(7) { animation-delay: 0.35s; }
+        .fade-in:nth-child(8) { animation-delay: 0.4s; }
 
         /* Last updated timestamp */
         .timestamp {
@@ -357,37 +360,24 @@
             color: var(--text-muted);
         }
         .timestamp svg { width: 12px; height: 12px; }
-
-        /* Baki bar indicator */
-        .baki-bar {
-            height: 4px;
-            border-radius: 2px;
-            background: rgba(139, 92, 246, 0.15);
-            margin-top: 6px;
-            overflow: hidden;
-        }
-        .baki-bar-fill {
-            height: 100%;
-            border-radius: 2px;
-            transition: width 1s ease;
-        }
     </style>
 </head>
 <body>
     <div class="bg-orbs"></div>
 
-    <!-- Loading Overlay -->
     <div class="loading-overlay" id="loadingOverlay">
         <div class="spinner"></div>
         <div class="loading-text">Memuatkan data dari Google Sheets...</div>
     </div>
 
     <div class="container">
-        <!-- Header -->
         <header class="header" id="header">
-            <div style="margin-bottom: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                <img src="LOGO_KOSPEN.jpg" alt="Logo KOSPEN" style="height: 100px; width: auto; margin-bottom: 16px; border-radius: 8px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.08));">
-                <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.05em; margin: 0;">Jabatan Kesihatan Negeri Kedah</h2>
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Coat_of_arms_of_Malaysia.svg/300px-Coat_of_arms_of_Malaysia.svg.png" alt="Jata Negara" style="height: 110px; width: auto; margin-bottom: 16px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.08));">
+                <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.05em; margin: 0; line-height: 1.4;">
+                    Kementerian Kesihatan Malaysia<br>
+                    Jabatan Kesihatan Negeri Kedah
+                </h2>
             </div>
             <h1>DASHBOARD PENGGUNAAN & BAKI iFOBT</h1>
             <p>Pemantauan Stok Fasiliti Kesihatan Negeri Kedah</p>
@@ -401,10 +391,8 @@
             </div>
         </header>
 
-        <!-- Error Banner -->
         <div class="error-banner" id="errorBanner"></div>
 
-        <!-- Summary Cards -->
         <div class="summary-grid" id="summaryGrid">
             <div class="summary-card blue fade-in" id="cardStok2024">
                 <div class="label">Stok 2024</div>
@@ -438,45 +426,44 @@
             </div>
         </div>
 
-        <!-- Charts -->
         <div class="charts-grid">
-            <!-- Chart 1: Overall Comparison -->
             <div class="chart-card fade-in" id="chartCard1">
                 <h2>📊 Rumusan Keseluruhan: Stok vs Penggunaan vs Baki</h2>
                 <canvas id="chartKeseluruhan"></canvas>
             </div>
 
-            <!-- Chart 2: Monthly Trend -->
             <div class="chart-card fade-in" id="chartCard2">
                 <h2>📈 Trend Penggunaan Bulanan (2025 vs 2026)</h2>
                 <canvas id="chartTrend"></canvas>
             </div>
 
-            <!-- Chart 3: District 2025 -->
             <div class="chart-card fade-in" id="chartCard3">
                 <h2>🏥 Stok vs Penggunaan Mengikut Daerah — 2025</h2>
                 <canvas id="chartDaerah2025"></canvas>
             </div>
 
-            <!-- Chart 4: District 2026 -->
             <div class="chart-card fade-in" id="chartCard4">
                 <h2>🏥 Stok vs Penggunaan Mengikut Daerah — 2026</h2>
                 <canvas id="chartDaerah2026"></canvas>
             </div>
 
-            <!-- Chart 5: Baki comparison -->
             <div class="chart-card fade-in" id="chartCard5">
                 <h2>📉 Perbandingan Baki Stok Semasa Mengikut Daerah (2025 vs 2026)</h2>
                 <canvas id="chartBaki"></canvas>
             </div>
 
-            <!-- Chart 6: Donut - Usage ratio 2026 -->
             <div class="chart-card fade-in" id="chartCard6">
                 <h2>🎯 Nisbah Penggunaan vs Baki — 2026</h2>
                 <canvas id="chartDonut2026"></canvas>
             </div>
+            
+            <div class="chart-card fade-in full-width" id="chartCard7">
+                <h2>🗑️ Pemantauan iFOBT Bazir / Rosak Mengikut Daerah — 2026</h2>
+                <div style="max-height: 400px; display: flex; justify-content: center;">
+                    <canvas id="chartBazir2026"></canvas>
+                </div>
+            </div>
 
-            <!-- Table: Full detail -->
             <div class="chart-card full-width fade-in" id="tableCard">
                 <h2>📋 Jadual Terperinci — 2026 (Mengikut Bulan)</h2>
                 <div class="table-wrapper" id="tableWrapper">
@@ -485,7 +472,6 @@
             </div>
         </div>
 
-        <!-- Footer -->
         <footer class="footer">
             &copy; 2026 Pemantauan iFOBT — <a href="https://docs.google.com/spreadsheets/d/1QuIJkvtyRHAJVGIArRb5W1UwyTxAfhAN0Iydw8Cs8Og/edit" target="_blank" rel="noopener">Sumber Data Google Sheets</a>
         </footer>
@@ -503,7 +489,6 @@
     };
 
     function csvUrl(gid) {
-        // Use gviz/tq endpoint — has proper CORS headers and works from file:// protocol
         return `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&gid=${gid}`;
     }
 
@@ -537,7 +522,6 @@
                 current += c;
             }
         }
-        // last field
         if (rows.length === 0) rows.push([]);
         rows[rows.length-1].push(current);
 
@@ -558,11 +542,9 @@
     // DATA PARSERS for each sheet
     // ============================================================
     function parse2024(rows) {
-        // Find data rows: rows that start with ,<number>,<district name>
         const districts = [];
         let totals = null;
         for (const row of rows) {
-            // The BIL column is index 1
             const bil = num(row[1]);
             const name = (row[2] || '').trim();
             if (bil >= 1 && bil <= 11 && name) {
@@ -571,7 +553,7 @@
                     cfTahunLepas: num(row[3]),
                     terima: num(row[4]),
                     jumlahStok: num(row[5]),
-                    penggunaan: num(row[7]), // PENGGUNAAN SEHINGGA 26/12/2024
+                    penggunaan: num(row[7]), 
                     baki: num(row[8])
                 });
             }
@@ -589,8 +571,6 @@
     }
 
     function parseYearly(rows) {
-        // For 2025 and 2026 sheets with monthly columns
-        // Headers row: BIL, DAERAH, C/F, TERIMA, JUMLAH STOK, JAN..DIS, BAKI, CATATAN
         const months = ['JAN','FEB','MAC','APR','MEI','JUN','JUL','OGO','SEP','OKT','NOV','DIS'];
         const districts = [];
         let totals = null;
@@ -611,7 +591,8 @@
                     jumlahStok: num(row[5]),
                     monthly,
                     totalUsage,
-                    bakiSemasa: num(row[18])
+                    bakiSemasa: num(row[18]),
+                    bazir: num(row[19]) // Mengekstrak data Bazir di Kolum T (index 19)
                 });
             }
             if (bil === 12 || name === 'JUMLAH') {
@@ -625,7 +606,8 @@
                     jumlahStok: num(row[5]),
                     monthly,
                     totalUsage: monthly.reduce((a, b) => a + b, 0),
-                    bakiSemasa: num(row[18])
+                    bakiSemasa: num(row[18]),
+                    bazir: num(row[19]) // Mengekstrak jumlah Bazir di Kolum T
                 };
             }
         }
@@ -645,7 +627,6 @@
     Chart.defaults.animation.duration = 1200;
     Chart.defaults.animation.easing = 'easeOutQuart';
 
-    // Store chart instances for potential updates
     const charts = {};
 
     // ============================================================
@@ -663,7 +644,6 @@
         document.getElementById('valGuna2026').textContent = fmt(t26.totalUsage);
         document.getElementById('valBaki2026').textContent = fmt(t26.bakiSemasa);
 
-        // Determine which months have data for 2026
         const activeMonths2026 = [];
         const monthNames = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogo','Sep','Okt','Nov','Dis'];
         t26.monthly.forEach((v, i) => { if (v > 0) activeMonths2026.push(monthNames[i]); });
@@ -677,7 +657,6 @@
         const t25 = data2025.totals;
         const t26 = data2026.totals;
 
-        // Determine label for 2026 based on active months
         const monthNames = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogo','Sep','Okt','Nov','Dis'];
         const lastActiveMonth2026 = t26.monthly.reduce((last, v, i) => v > 0 ? i : last, -1);
         const label2026 = lastActiveMonth2026 >= 0 ? `2026 (Stkt ${monthNames[lastActiveMonth2026]})` : '2026';
@@ -746,9 +725,6 @@
         const t25 = data2025.totals;
         const t26 = data2026.totals;
 
-        // For 2026, show null for months with no data
-        const data2026Monthly = t26.monthly.map(v => v > 0 ? v : null);
-        // But also check: if all values from a certain month onward are 0, they're future
         let lastActive = -1;
         for (let i = 11; i >= 0; i--) {
             if (t26.monthly[i] > 0) { lastActive = i; break; }
@@ -997,9 +973,68 @@
         });
     }
 
+    // Fungsi baru untuk render graf bar Bazir berserta label nombor sebenar
+    function renderChartBazir(data2026) {
+        const labels = data2026.districts.map(d => d.daerah);
+        const bazirData = data2026.districts.map(d => d.bazir);
+
+        const ctx = document.getElementById('chartBazir2026').getContext('2d');
+        charts.bazir = new Chart(ctx, {
+            type: 'bar',
+            plugins: [ChartDataLabels], // Menggunakan plugin chartjs-plugin-datalabels
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Jumlah Bazir / Rosak (2026)',
+                    data: bazirData,
+                    backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                    borderColor: '#ef4444',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    datalabels: {
+                        color: '#7f1d1d',
+                        anchor: 'end',
+                        align: 'top',
+                        font: { weight: 'bold', size: 11 },
+                        formatter: function(value) {
+                            return value > 0 ? fmt(value) : ''; // Sembunyikan label jika 0
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        borderColor: 'rgba(239, 68, 68, 0.3)',
+                        borderWidth: 1,
+                        padding: 12,
+                        callbacks: {
+                            label: ctx => `${ctx.dataset.label}: ${fmt(ctx.parsed.y)}`
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grace: '10%', // Memberi ruang ekstra di atas bar bagi laluan text datalabels
+                        grid: { color: 'rgba(139, 92, 246, 0.08)' },
+                        ticks: { callback: v => fmt(v) }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { maxRotation: 45, minRotation: 45, font: { size: 10 } }
+                    }
+                }
+            }
+        });
+    }
+
     function renderTable2026(data2026) {
         const monthNames = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogo','Sep','Okt','Nov','Dis'];
-        // Determine active months
         const t26 = data2026.totals;
         let lastActive = -1;
         for (let i = 11; i >= 0; i--) {
@@ -1010,7 +1045,8 @@
         let html = '<table><thead><tr>';
         html += '<th>Daerah</th><th>C/F 2025</th><th>Terima JKN</th><th>Jum. Stok</th>';
         activeMonths.forEach(m => html += `<th>${m}</th>`);
-        html += '<th>Jum. Guna</th><th>Baki</th>';
+        // Menambah lajur Bazir
+        html += '<th>Jum. Guna</th><th>Baki</th><th>Bazir</th>';
         html += '</tr></thead><tbody>';
 
         data2026.districts.forEach(d => {
@@ -1024,10 +1060,10 @@
             }
             html += `<td class="num" style="color:#fb7185;font-weight:600">${fmt(d.totalUsage)}</td>`;
             html += `<td class="num" style="color:#34d399;font-weight:600">${fmt(d.bakiSemasa)}</td>`;
+            html += `<td class="num" style="color:#ef4444;font-weight:600">${fmt(d.bazir)}</td>`;
             html += '</tr>';
         });
 
-        // Totals row
         html += '<tr>';
         html += `<td>JUMLAH</td>`;
         html += `<td class="num">${fmt(t26.cfTahunLepas)}</td>`;
@@ -1038,6 +1074,7 @@
         }
         html += `<td class="num" style="color:#fb7185;font-weight:600">${fmt(t26.totalUsage)}</td>`;
         html += `<td class="num" style="color:#34d399;font-weight:600">${fmt(t26.bakiSemasa)}</td>`;
+        html += `<td class="num" style="color:#ef4444;font-weight:600">${fmt(t26.bazir)}</td>`;
         html += '</tr>';
 
         html += '</tbody></table>';
@@ -1060,7 +1097,6 @@
         const errorBanner = document.getElementById('errorBanner');
 
         try {
-            // Fetch all three sheets in parallel
             const [rows2024, rows2025, rows2026] = await Promise.all([
                 fetchSheet(SHEETS['2024'].gid),
                 fetchSheet(SHEETS['2025'].gid),
@@ -1071,12 +1107,10 @@
             const data2025 = parseYearly(rows2025);
             const data2026 = parseYearly(rows2026);
 
-            // Validate
             if (!data2024.totals || !data2025.totals || !data2026.totals) {
                 throw new Error('Struktur data spreadsheet tidak dikenali. Sila pastikan format spreadsheet betul.');
             }
 
-            // Render everything
             renderSummary(data2024, data2025, data2026);
             renderChartKeseluruhan(data2024, data2025, data2026);
             renderChartTrend(data2025, data2026);
@@ -1084,9 +1118,9 @@
             renderChartDaerah('chartDaerah2026', data2026, '2026', 'rgba(34, 211, 238, 0.6)', 'rgba(251, 191, 36, 0.6)');
             renderChartBaki(data2025, data2026);
             renderDonut2026(data2026);
+            renderChartBazir(data2026); // Render graf bar Bazir yang baru ditambah
             renderTable2026(data2026);
 
-            // Update timestamp
             const now = new Date();
             document.querySelector('#lastUpdated span').textContent =
                 `Dikemas kini: ${now.toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric' })} ${now.toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit' })}`;
@@ -1103,9 +1137,7 @@
         }
     }
 
-    // Run on page load
     document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
-
