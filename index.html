@@ -187,12 +187,10 @@
             color: var(--text-muted);
             margin-top: 4px;
         }
-        .summary-card.blue .value { color: var(--accent-blue); }
-        .summary-card.cyan .value { color: var(--accent-cyan); }
         .summary-card.emerald .value { color: var(--accent-emerald); }
-        .summary-card.amber .value { color: var(--accent-amber); }
         .summary-card.rose .value { color: var(--accent-rose); }
         .summary-card.purple .value { color: var(--accent-purple); }
+        .summary-card.red .value { color: #ef4444; }
 
         /* Charts grid */
         .charts-grid {
@@ -389,25 +387,10 @@
         <div class="error-banner" id="errorBanner"></div>
 
         <div class="summary-grid" id="summaryGrid">
-            <div class="summary-card blue fade-in">
-                <div class="label">Stok 2024</div>
-                <div class="value" id="valStok2024">—</div>
-                <div class="sub">Jumlah keseluruhan</div>
-            </div>
-            <div class="summary-card cyan fade-in">
-                <div class="label">Stok 2025</div>
-                <div class="value" id="valStok2025">—</div>
-                <div class="sub">Jumlah keseluruhan</div>
-            </div>
             <div class="summary-card emerald fade-in">
                 <div class="label">Stok 2026</div>
                 <div class="value" id="valStok2026">—</div>
                 <div class="sub">Jumlah keseluruhan</div>
-            </div>
-            <div class="summary-card amber fade-in">
-                <div class="label">Penggunaan 2025</div>
-                <div class="value" id="valGuna2025">—</div>
-                <div class="sub">Sepanjang tahun</div>
             </div>
             <div class="summary-card rose fade-in">
                 <div class="label">Penggunaan 2026</div>
@@ -418,6 +401,11 @@
                 <div class="label">Baki Semasa 2026</div>
                 <div class="value" id="valBaki2026">—</div>
                 <div class="sub">Stok semasa di PKD</div>
+            </div>
+            <div class="summary-card red fade-in">
+                <div class="label">Bazir / Rosak 2026</div>
+                <div class="value" id="valBazir2026">—</div>
+                <div class="sub">Keseluruhan tahun</div>
             </div>
         </div>
 
@@ -436,7 +424,7 @@
             </div>
 
             <div class="chart-card fade-in" id="chartCardRumusan">
-                <h2>📊 Rumusan Keseluruhan 2026: Stok vs Penggunaan vs Baki</h2>
+                <h2>📊 Rumusan Keseluruhan 2026: Stok vs Penggunaan vs Baki vs Bazir</h2>
                 <canvas id="chartRumusan2026"></canvas>
             </div>
 
@@ -575,17 +563,13 @@
 
     const charts = {};
 
-    function renderSummary(data2024, data2025, data2026) {
-        const t24 = data2024.totals;
-        const t25 = data2025.totals;
+    function renderSummary(data2026) {
         const t26 = data2026.totals;
 
-        document.getElementById('valStok2024').textContent = fmt(t24.jumlahStok);
-        document.getElementById('valStok2025').textContent = fmt(t25.jumlahStok);
         document.getElementById('valStok2026').textContent = fmt(t26.jumlahStok);
-        document.getElementById('valGuna2025').textContent = fmt(t25.totalUsage);
         document.getElementById('valGuna2026').textContent = fmt(t26.totalUsage);
         document.getElementById('valBaki2026').textContent = fmt(t26.bakiSemasa);
+        document.getElementById('valBazir2026').textContent = fmt(t26.bazir);
 
         const activeMonths = [];
         const monthNames = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogo','Sep','Okt','Nov','Dis'];
@@ -680,6 +664,8 @@
                     legend: { position: 'bottom' },
                     tooltip: {
                         backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        titleColor: '#000000', // Warna hitam untuk tajuk popup
+                        bodyColor: '#000000', // Warna hitam untuk kandungan popup
                         borderColor: 'rgba(99,102,241,0.3)', borderWidth: 1, padding: 12,
                         callbacks: { label: ctx => ctx.parsed.y !== null ? `${ctx.dataset.label}: ${fmt(ctx.parsed.y)}` : '' }
                     }
@@ -702,7 +688,8 @@
                 datasets: [
                     { label: 'Jumlah Stok', data: [t26.jumlahStok], backgroundColor: 'rgba(99, 102, 241, 0.7)', borderColor: '#6366f1', borderWidth: 1, borderRadius: 6 },
                     { label: 'Penggunaan', data: [t26.totalUsage], backgroundColor: 'rgba(251, 113, 133, 0.7)', borderColor: '#fb7185', borderWidth: 1, borderRadius: 6 },
-                    { label: 'Baki', data: [t26.bakiSemasa], backgroundColor: 'rgba(52, 211, 153, 0.7)', borderColor: '#34d399', borderWidth: 1, borderRadius: 6 }
+                    { label: 'Baki', data: [t26.bakiSemasa], backgroundColor: 'rgba(52, 211, 153, 0.7)', borderColor: '#34d399', borderWidth: 1, borderRadius: 6 },
+                    { label: 'Bazir', data: [t26.bazir], backgroundColor: 'rgba(239, 68, 68, 0.7)', borderColor: '#ef4444', borderWidth: 1, borderRadius: 6 } // Data Bazir ditambah
                 ]
             },
             options: {
@@ -711,6 +698,8 @@
                     legend: { position: 'bottom' },
                     tooltip: {
                         backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        titleColor: '#000000', // Warna hitam
+                        bodyColor: '#000000', // Warna hitam
                         borderColor: 'rgba(99,102,241,0.3)', borderWidth: 1, padding: 12,
                         callbacks: { label: ctx => `${ctx.dataset.label}: ${fmt(ctx.parsed.y)}` }
                     }
@@ -755,7 +744,7 @@
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false, // Disetkan pada false supaya container height = 450px berkesan
+                maintainAspectRatio: false, 
                 plugins: {
                     legend: { position: 'bottom' },
                     datalabels: {
@@ -765,6 +754,8 @@
                     },
                     tooltip: {
                         backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        titleColor: '#000000', // Warna hitam
+                        bodyColor: '#000000', // Warna hitam
                         borderColor: 'rgba(99,102,241,0.3)', borderWidth: 1, padding: 12,
                         callbacks: {
                             label: ctx => {
@@ -804,9 +795,8 @@
             const data2025 = parseYearly(rows2025);
             const data2026 = parseYearly(rows2026);
 
-            renderSummary(data2024, data2025, data2026);
+            renderSummary(data2026); // Menggunakan data 2026 sahaja untuk summary
             
-            // Render the 4 requested components
             renderTable2026(data2026);
             renderChartTrend(data2025, data2026);
             renderChartRumusan2026(data2026);
