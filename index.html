@@ -331,7 +331,7 @@
             text-decoration: none;
         }
 
-        /* Fade-in animation for cards */
+        /* Fade-in animation */
         .fade-in {
             opacity: 0;
             transform: translateY(16px);
@@ -344,12 +344,7 @@
         .fade-in:nth-child(2) { animation-delay: 0.1s; }
         .fade-in:nth-child(3) { animation-delay: 0.15s; }
         .fade-in:nth-child(4) { animation-delay: 0.2s; }
-        .fade-in:nth-child(5) { animation-delay: 0.25s; }
-        .fade-in:nth-child(6) { animation-delay: 0.3s; }
-        .fade-in:nth-child(7) { animation-delay: 0.35s; }
-        .fade-in:nth-child(8) { animation-delay: 0.4s; }
 
-        /* Last updated timestamp */
         .timestamp {
             display: flex;
             align-items: center;
@@ -394,32 +389,32 @@
         <div class="error-banner" id="errorBanner"></div>
 
         <div class="summary-grid" id="summaryGrid">
-            <div class="summary-card blue fade-in" id="cardStok2024">
+            <div class="summary-card blue fade-in">
                 <div class="label">Stok 2024</div>
                 <div class="value" id="valStok2024">—</div>
                 <div class="sub">Jumlah keseluruhan</div>
             </div>
-            <div class="summary-card cyan fade-in" id="cardStok2025">
+            <div class="summary-card cyan fade-in">
                 <div class="label">Stok 2025</div>
                 <div class="value" id="valStok2025">—</div>
                 <div class="sub">Jumlah keseluruhan</div>
             </div>
-            <div class="summary-card emerald fade-in" id="cardStok2026">
+            <div class="summary-card emerald fade-in">
                 <div class="label">Stok 2026</div>
                 <div class="value" id="valStok2026">—</div>
                 <div class="sub">Jumlah keseluruhan</div>
             </div>
-            <div class="summary-card amber fade-in" id="cardGuna2025">
+            <div class="summary-card amber fade-in">
                 <div class="label">Penggunaan 2025</div>
                 <div class="value" id="valGuna2025">—</div>
                 <div class="sub">Sepanjang tahun</div>
             </div>
-            <div class="summary-card rose fade-in" id="cardGuna2026">
+            <div class="summary-card rose fade-in">
                 <div class="label">Penggunaan 2026</div>
                 <div class="value" id="valGuna2026">—</div>
                 <div class="sub" id="subGuna2026">Setakat ini</div>
             </div>
-            <div class="summary-card purple fade-in" id="cardBaki">
+            <div class="summary-card purple fade-in">
                 <div class="label">Baki Semasa 2026</div>
                 <div class="value" id="valBaki2026">—</div>
                 <div class="sub">Stok semasa di PKD</div>
@@ -427,6 +422,7 @@
         </div>
 
         <div class="charts-grid">
+            
             <div class="chart-card full-width fade-in" id="tableCard">
                 <h2>📋 Jadual Terperinci — 2026 (Mengikut Bulan)</h2>
                 <div class="table-wrapper" id="tableWrapper">
@@ -434,42 +430,23 @@
                 </div>
             </div>
 
-            <div class="chart-card fade-in" id="chartCard1">
-                <h2>📊 Rumusan Keseluruhan: Stok vs Penggunaan vs Baki</h2>
-                <canvas id="chartKeseluruhan"></canvas>
-            </div>
-
-            <div class="chart-card fade-in" id="chartCard2">
+            <div class="chart-card fade-in" id="chartCardTrend">
                 <h2>📈 Trend Penggunaan Bulanan (2025 vs 2026)</h2>
                 <canvas id="chartTrend"></canvas>
             </div>
 
-            <div class="chart-card fade-in" id="chartCard3">
-                <h2>🏥 Stok vs Penggunaan Mengikut Daerah — 2025</h2>
-                <canvas id="chartDaerah2025"></canvas>
+            <div class="chart-card fade-in" id="chartCardRumusan">
+                <h2>📊 Rumusan Keseluruhan 2026: Stok vs Penggunaan vs Baki</h2>
+                <canvas id="chartRumusan2026"></canvas>
             </div>
 
-            <div class="chart-card fade-in" id="chartCard4">
-                <h2>🏥 Stok vs Penggunaan Mengikut Daerah — 2026</h2>
-                <canvas id="chartDaerah2026"></canvas>
-            </div>
-
-            <div class="chart-card fade-in" id="chartCard5">
-                <h2>📉 Perbandingan Baki Stok Semasa Mengikut Daerah (2025 vs 2026)</h2>
-                <canvas id="chartBaki"></canvas>
-            </div>
-
-            <div class="chart-card fade-in" id="chartCard6">
-                <h2>🎯 Nisbah Penggunaan vs Baki — 2026</h2>
-                <canvas id="chartDonut2026"></canvas>
-            </div>
-            
-            <div class="chart-card fade-in full-width" id="chartCard7">
-                <h2>🗑️ Pemantauan iFOBT Bazir / Rosak Mengikut Daerah — 2026</h2>
-                <div style="max-height: 400px; display: flex; justify-content: center;">
-                    <canvas id="chartBazir2026"></canvas>
+            <div class="chart-card full-width fade-in" id="chartCardStacked">
+                <h2>🏥 Peratusan Stok (Penggunaan, Baki & Bazir) Mengikut Daerah — 2026</h2>
+                <div style="height: 450px; position: relative;">
+                    <canvas id="chartStackedDaerah"></canvas>
                 </div>
             </div>
+            
         </div>
 
         <footer class="footer">
@@ -504,27 +481,19 @@
         for (let i = 0; i < chars.length; i++) {
             const c = chars[i];
             if (c === '"') {
-                if (inQuotes && chars[i+1] === '"') {
-                    current += '"';
-                    i++;
-                } else {
-                    inQuotes = !inQuotes;
-                }
+                if (inQuotes && chars[i+1] === '"') { current += '"'; i++; }
+                else { inQuotes = !inQuotes; }
             } else if (c === ',' && !inQuotes) {
-                rows.length === 0 ? rows.push([current]) : rows[rows.length-1].push(current);
-                current = '';
+                rows.length === 0 ? rows.push([current]) : rows[rows.length-1].push(current); current = '';
             } else if (c === '\n' && !inQuotes) {
                 if (rows.length === 0) rows.push([]);
-                rows[rows.length-1].push(current);
-                current = '';
-                rows.push([]);
+                rows[rows.length-1].push(current); current = ''; rows.push([]);
             } else {
                 current += c;
             }
         }
         if (rows.length === 0) rows.push([]);
         rows[rows.length-1].push(current);
-
         return rows.filter(r => r.some(c => c.trim() !== ''));
     }
 
@@ -539,39 +508,23 @@
     }
 
     // ============================================================
-    // DATA PARSERS for each sheet
+    // DATA PARSERS
     // ============================================================
     function parse2024(rows) {
-        const districts = [];
-        let totals = null;
+        const totals = { jumlahStok: 0, penggunaan: 0, baki: 0 };
         for (const row of rows) {
             const bil = num(row[1]);
             const name = (row[2] || '').trim();
-            if (bil >= 1 && bil <= 11 && name) {
-                districts.push({
-                    daerah: name,
-                    cfTahunLepas: num(row[3]),
-                    terima: num(row[4]),
-                    jumlahStok: num(row[5]),
-                    penggunaan: num(row[7]), 
-                    baki: num(row[8])
-                });
-            }
             if (bil === 12 || name === 'JUMLAH') {
-                totals = {
-                    cfTahunLepas: num(row[3]),
-                    terima: num(row[4]),
-                    jumlahStok: num(row[5]),
-                    penggunaan: num(row[7]),
-                    baki: num(row[8])
-                };
+                totals.jumlahStok = num(row[5]);
+                totals.penggunaan = num(row[7]);
+                totals.baki = num(row[8]);
             }
         }
-        return { districts, totals };
+        return { totals };
     }
 
     function parseYearly(rows) {
-        const months = ['JAN','FEB','MAC','APR','MEI','JUN','JUL','OGO','SEP','OKT','NOV','DIS'];
         const districts = [];
         let totals = null;
 
@@ -580,26 +533,21 @@
             const name = (row[2] || '').trim();
             if (bil >= 1 && bil <= 11 && name) {
                 const monthly = [];
-                for (let m = 0; m < 12; m++) {
-                    monthly.push(num(row[6 + m]));
-                }
-                const totalUsage = monthly.reduce((a, b) => a + b, 0);
+                for (let m = 0; m < 12; m++) monthly.push(num(row[6 + m]));
                 districts.push({
                     daerah: name,
                     cfTahunLepas: num(row[3]),
                     terima: num(row[4]),
                     jumlahStok: num(row[5]),
                     monthly,
-                    totalUsage,
+                    totalUsage: monthly.reduce((a, b) => a + b, 0),
                     bakiSemasa: num(row[18]),
-                    bazir: num(row[19]) // Mengekstrak data Bazir di Kolum T (index 19)
+                    bazir: num(row[19])
                 });
             }
             if (bil === 12 || name === 'JUMLAH') {
                 const monthly = [];
-                for (let m = 0; m < 12; m++) {
-                    monthly.push(num(row[6 + m]));
-                }
+                for (let m = 0; m < 12; m++) monthly.push(num(row[6 + m]));
                 totals = {
                     cfTahunLepas: num(row[3]),
                     terima: num(row[4]),
@@ -607,15 +555,15 @@
                     monthly,
                     totalUsage: monthly.reduce((a, b) => a + b, 0),
                     bakiSemasa: num(row[18]),
-                    bazir: num(row[19]) // Mengekstrak jumlah Bazir di Kolum T
+                    bazir: num(row[19])
                 };
             }
         }
-        return { districts, totals, months };
+        return { districts, totals };
     }
 
     // ============================================================
-    // CHART.JS GLOBAL CONFIG
+    // CHART.JS CONFIG & RENDERING
     // ============================================================
     Chart.defaults.color = '#581c87';
     Chart.defaults.borderColor = 'rgba(139, 92, 246, 0.1)';
@@ -623,15 +571,10 @@
     Chart.defaults.font.size = 11;
     Chart.defaults.plugins.legend.labels.usePointStyle = true;
     Chart.defaults.plugins.legend.labels.pointStyleWidth = 10;
-    Chart.defaults.plugins.legend.labels.padding = 16;
     Chart.defaults.animation.duration = 1200;
-    Chart.defaults.animation.easing = 'easeOutQuart';
 
     const charts = {};
 
-    // ============================================================
-    // RENDER FUNCTIONS
-    // ============================================================
     function renderSummary(data2024, data2025, data2026) {
         const t24 = data2024.totals;
         const t25 = data2025.totals;
@@ -644,392 +587,12 @@
         document.getElementById('valGuna2026').textContent = fmt(t26.totalUsage);
         document.getElementById('valBaki2026').textContent = fmt(t26.bakiSemasa);
 
-        const activeMonths2026 = [];
+        const activeMonths = [];
         const monthNames = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogo','Sep','Okt','Nov','Dis'];
-        t26.monthly.forEach((v, i) => { if (v > 0) activeMonths2026.push(monthNames[i]); });
-        if (activeMonths2026.length > 0) {
-            document.getElementById('subGuna2026').textContent = `Setakat ${activeMonths2026[activeMonths2026.length - 1]} 2026`;
+        t26.monthly.forEach((v, i) => { if (v > 0) activeMonths.push(monthNames[i]); });
+        if (activeMonths.length > 0) {
+            document.getElementById('subGuna2026').textContent = `Setakat ${activeMonths[activeMonths.length - 1]} 2026`;
         }
-    }
-
-    function renderChartKeseluruhan(data2024, data2025, data2026) {
-        const t24 = data2024.totals;
-        const t25 = data2025.totals;
-        const t26 = data2026.totals;
-
-        const monthNames = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogo','Sep','Okt','Nov','Dis'];
-        const lastActiveMonth2026 = t26.monthly.reduce((last, v, i) => v > 0 ? i : last, -1);
-        const label2026 = lastActiveMonth2026 >= 0 ? `2026 (Stkt ${monthNames[lastActiveMonth2026]})` : '2026';
-
-        const ctx = document.getElementById('chartKeseluruhan').getContext('2d');
-        charts.keseluruhan = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['2024', '2025', label2026],
-                datasets: [
-                    {
-                        label: 'Jumlah Stok',
-                        data: [t24.jumlahStok, t25.jumlahStok, t26.jumlahStok],
-                        backgroundColor: 'rgba(99, 102, 241, 0.7)',
-                        borderColor: '#6366f1',
-                        borderWidth: 1,
-                        borderRadius: 6
-                    },
-                    {
-                        label: 'Penggunaan',
-                        data: [t24.penggunaan, t25.totalUsage, t26.totalUsage],
-                        backgroundColor: 'rgba(251, 113, 133, 0.7)',
-                        borderColor: '#fb7185',
-                        borderWidth: 1,
-                        borderRadius: 6
-                    },
-                    {
-                        label: 'Baki',
-                        data: [t24.baki, t25.bakiSemasa, t26.bakiSemasa],
-                        backgroundColor: 'rgba(52, 211, 153, 0.7)',
-                        borderColor: '#34d399',
-                        borderWidth: 1,
-                        borderRadius: 6
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: { position: 'bottom' },
-                    tooltip: {
-                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                        borderColor: 'rgba(99,102,241,0.3)',
-                        borderWidth: 1,
-                        padding: 12,
-                        callbacks: {
-                            label: ctx => `${ctx.dataset.label}: ${fmt(ctx.parsed.y)}`
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: 'rgba(139, 92, 246, 0.08)' },
-                        ticks: { callback: v => fmt(v) }
-                    },
-                    x: { grid: { display: false } }
-                }
-            }
-        });
-    }
-
-    function renderChartTrend(data2025, data2026) {
-        const monthLabels = ['Jan', 'Feb', 'Mac', 'Apr', 'Mei', 'Jun', 'Jul', 'Ogo', 'Sep', 'Okt', 'Nov', 'Dis'];
-        const t25 = data2025.totals;
-        const t26 = data2026.totals;
-
-        let lastActive = -1;
-        for (let i = 11; i >= 0; i--) {
-            if (t26.monthly[i] > 0) { lastActive = i; break; }
-        }
-        const trend2026 = t26.monthly.map((v, i) => i <= lastActive ? v : null);
-
-        const ctx = document.getElementById('chartTrend').getContext('2d');
-        charts.trend = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: monthLabels,
-                datasets: [
-                    {
-                        label: '2025',
-                        data: t25.monthly,
-                        borderColor: '#fbbf24',
-                        backgroundColor: 'rgba(251, 191, 36, 0.1)',
-                        fill: true,
-                        tension: 0.4,
-                        pointRadius: 4,
-                        pointHoverRadius: 7,
-                        pointBackgroundColor: '#fbbf24',
-                        borderWidth: 2.5
-                    },
-                    {
-                        label: '2026',
-                        data: trend2026,
-                        borderColor: '#a78bfa',
-                        backgroundColor: 'rgba(167, 139, 250, 0.1)',
-                        fill: true,
-                        tension: 0.4,
-                        pointRadius: 5,
-                        pointHoverRadius: 8,
-                        pointBackgroundColor: '#a78bfa',
-                        borderWidth: 2.5,
-                        borderDash: [5, 3]
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: { position: 'bottom' },
-                    tooltip: {
-                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                        borderColor: 'rgba(99,102,241,0.3)',
-                        borderWidth: 1,
-                        padding: 12,
-                        callbacks: {
-                            label: ctx => ctx.parsed.y !== null ? `${ctx.dataset.label}: ${fmt(ctx.parsed.y)}` : ''
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: 'rgba(139, 92, 246, 0.08)' },
-                        ticks: { callback: v => fmt(v) }
-                    },
-                    x: { grid: { display: false } }
-                }
-            }
-        });
-    }
-
-    function renderChartDaerah(canvasId, data, year, colorStok, colorGuna) {
-        const labels = data.districts.map(d => d.daerah);
-        const stokData = data.districts.map(d => d.jumlahStok);
-        const gunaData = data.districts.map(d => year === '2024' ? d.penggunaan : d.totalUsage);
-
-        const ctx = document.getElementById(canvasId).getContext('2d');
-        charts[canvasId] = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels,
-                datasets: [
-                    {
-                        label: `Stok (${year})`,
-                        data: stokData,
-                        backgroundColor: colorStok,
-                        borderRadius: 4,
-                        borderWidth: 0
-                    },
-                    {
-                        label: `Penggunaan (${year})`,
-                        data: gunaData,
-                        backgroundColor: colorGuna,
-                        borderRadius: 4,
-                        borderWidth: 0
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: { position: 'bottom' },
-                    tooltip: {
-                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                        borderColor: 'rgba(99,102,241,0.3)',
-                        borderWidth: 1,
-                        padding: 12,
-                        callbacks: {
-                            label: ctx => `${ctx.dataset.label}: ${fmt(ctx.parsed.y)}`
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: 'rgba(139, 92, 246, 0.08)' },
-                        ticks: { callback: v => fmt(v) }
-                    },
-                    x: {
-                        grid: { display: false },
-                        ticks: { maxRotation: 45, minRotation: 45, font: { size: 10 } }
-                    }
-                }
-            }
-        });
-    }
-
-    function renderChartBaki(data2025, data2026) {
-        const labels = data2025.districts.map(d => d.daerah);
-        const baki25 = data2025.districts.map(d => d.bakiSemasa);
-        const baki26 = data2026.districts.map(d => d.bakiSemasa);
-
-        const ctx = document.getElementById('chartBaki').getContext('2d');
-        charts.baki = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels,
-                datasets: [
-                    {
-                        label: 'Baki 2025',
-                        data: baki25,
-                        backgroundColor: 'rgba(251, 191, 36, 0.6)',
-                        borderColor: '#fbbf24',
-                        borderWidth: 1,
-                        borderRadius: 4
-                    },
-                    {
-                        label: 'Baki 2026',
-                        data: baki26,
-                        backgroundColor: 'rgba(34, 211, 238, 0.6)',
-                        borderColor: '#22d3ee',
-                        borderWidth: 1,
-                        borderRadius: 4
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: { position: 'bottom' },
-                    tooltip: {
-                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                        borderColor: 'rgba(99,102,241,0.3)',
-                        borderWidth: 1,
-                        padding: 12,
-                        callbacks: {
-                            label: ctx => `${ctx.dataset.label}: ${fmt(ctx.parsed.y)}`
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: 'rgba(139, 92, 246, 0.08)' },
-                        ticks: { callback: v => fmt(v) }
-                    },
-                    x: {
-                        grid:{ display: false },
-                        ticks: { maxRotation: 45, minRotation: 45, font: { size: 10 } }
-                    }
-                }
-            }
-        });
-    }
-
-    function renderDonut2026(data2026) {
-        const t26 = data2026.totals;
-        const used = t26.totalUsage;
-        const remaining = t26.bakiSemasa;
-
-        const ctx = document.getElementById('chartDonut2026').getContext('2d');
-        charts.donut = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Penggunaan', 'Baki Semasa'],
-                datasets: [{
-                    data: [used, remaining],
-                    backgroundColor: [
-                        'rgba(251, 113, 133, 0.8)',
-                        'rgba(52, 211, 153, 0.8)'
-                    ],
-                    borderColor: [
-                        '#fb7185',
-                        '#34d399'
-                    ],
-                    borderWidth: 2,
-                    hoverOffset: 8
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                cutout: '65%',
-                plugins: {
-                    legend: { position: 'bottom' },
-                    tooltip: {
-                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                        borderColor: 'rgba(99,102,241,0.3)',
-                        borderWidth: 1,
-                        padding: 12,
-                        callbacks: {
-                            label: function(ctx) {
-                                const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
-                                const pct = ((ctx.parsed / total) * 100).toFixed(1);
-                                return `${ctx.label}: ${fmt(ctx.parsed)} (${pct}%)`;
-                            }
-                        }
-                    }
-                }
-            },
-            plugins: [{
-                id: 'centerText',
-                beforeDraw: function(chart) {
-                    const { width, height, ctx } = chart;
-                    ctx.save();
-                    const total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                    const pctUsed = ((chart.data.datasets[0].data[0] / total) * 100).toFixed(0);
-                    ctx.font = '700 1.5rem Inter, sans-serif';
-                    ctx.fillStyle = '#3b0764';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText(`${pctUsed}%`, width / 2, height / 2 - 8);
-                    ctx.font = '400 0.65rem Inter, sans-serif';
-                    ctx.fillStyle = '#581c87';
-                    ctx.fillText('Digunakan', width / 2, height / 2 + 14);
-                    ctx.restore();
-                }
-            }]
-        });
-    }
-
-    function renderChartBazir(data2026) {
-        const labels = data2026.districts.map(d => d.daerah);
-        const bazirData = data2026.districts.map(d => d.bazir);
-
-        const ctx = document.getElementById('chartBazir2026').getContext('2d');
-        charts.bazir = new Chart(ctx, {
-            type: 'bar',
-            plugins: [ChartDataLabels],
-            data: {
-                labels,
-                datasets: [{
-                    label: 'Jumlah Bazir / Rosak (2026)',
-                    data: bazirData,
-                    backgroundColor: 'rgba(239, 68, 68, 0.7)',
-                    borderColor: '#ef4444',
-                    borderWidth: 1,
-                    borderRadius: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'bottom' },
-                    datalabels: {
-                        color: '#7f1d1d',
-                        anchor: 'end',
-                        align: 'top',
-                        font: { weight: 'bold', size: 11 },
-                        formatter: function(value) {
-                            return value > 0 ? fmt(value) : ''; 
-                        }
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                        borderColor: 'rgba(239, 68, 68, 0.3)',
-                        borderWidth: 1,
-                        padding: 12,
-                        callbacks: {
-                            label: ctx => `${ctx.dataset.label}: ${fmt(ctx.parsed.y)}`
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grace: '10%',
-                        grid: { color: 'rgba(139, 92, 246, 0.08)' },
-                        ticks: { callback: v => fmt(v) }
-                    },
-                    x: {
-                        grid: { display: false },
-                        ticks: { maxRotation: 45, minRotation: 45, font: { size: 10 } }
-                    }
-                }
-            }
-        });
     }
 
     function renderTable2026(data2026) {
@@ -1062,6 +625,7 @@
             html += '</tr>';
         });
 
+        // Totals row
         html += '<tr>';
         html += `<td>JUMLAH</td>`;
         html += `<td class="num">${fmt(t26.cfTahunLepas)}</td>`;
@@ -1079,57 +643,183 @@
         document.getElementById('tableWrapper').innerHTML = html;
     }
 
-    // ============================================================
-    // MAIN: FETCH & RENDER
-    // ============================================================
-    async function fetchSheet(gid) {
-        const url = csvUrl(gid);
-        const resp = await fetch(url);
-        if (!resp.ok) throw new Error(`Gagal memuat sheet (GID: ${gid}), status: ${resp.status}`);
-        const text = await resp.text();
-        return parseCSV(text);
+    function renderChartTrend(data2025, data2026) {
+        const monthLabels = ['Jan', 'Feb', 'Mac', 'Apr', 'Mei', 'Jun', 'Jul', 'Ogo', 'Sep', 'Okt', 'Nov', 'Dis'];
+        const t25 = data2025.totals;
+        const t26 = data2026.totals;
+
+        let lastActive = -1;
+        for (let i = 11; i >= 0; i--) { if (t26.monthly[i] > 0) { lastActive = i; break; } }
+        const trend2026 = t26.monthly.map((v, i) => i <= lastActive ? v : null);
+
+        const ctx = document.getElementById('chartTrend').getContext('2d');
+        charts.trend = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: monthLabels,
+                datasets: [
+                    {
+                        label: '2025',
+                        data: t25.monthly,
+                        borderColor: '#fbbf24',
+                        backgroundColor: 'rgba(251, 191, 36, 0.1)',
+                        fill: true, tension: 0.4, borderWidth: 2.5, pointRadius: 4
+                    },
+                    {
+                        label: '2026',
+                        data: trend2026,
+                        borderColor: '#a78bfa',
+                        backgroundColor: 'rgba(167, 139, 250, 0.1)',
+                        fill: true, tension: 0.4, borderWidth: 2.5, borderDash: [5, 3], pointRadius: 5
+                    }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: true,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: {
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        borderColor: 'rgba(99,102,241,0.3)', borderWidth: 1, padding: 12,
+                        callbacks: { label: ctx => ctx.parsed.y !== null ? `${ctx.dataset.label}: ${fmt(ctx.parsed.y)}` : '' }
+                    }
+                },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(139, 92, 246, 0.08)' }, ticks: { callback: v => fmt(v) } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
     }
 
+    function renderChartRumusan2026(data2026) {
+        const t26 = data2026.totals;
+        const ctx = document.getElementById('chartRumusan2026').getContext('2d');
+        charts.rumusan = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Tahun 2026'],
+                datasets: [
+                    { label: 'Jumlah Stok', data: [t26.jumlahStok], backgroundColor: 'rgba(99, 102, 241, 0.7)', borderColor: '#6366f1', borderWidth: 1, borderRadius: 6 },
+                    { label: 'Penggunaan', data: [t26.totalUsage], backgroundColor: 'rgba(251, 113, 133, 0.7)', borderColor: '#fb7185', borderWidth: 1, borderRadius: 6 },
+                    { label: 'Baki', data: [t26.bakiSemasa], backgroundColor: 'rgba(52, 211, 153, 0.7)', borderColor: '#34d399', borderWidth: 1, borderRadius: 6 }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: true,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: {
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        borderColor: 'rgba(99,102,241,0.3)', borderWidth: 1, padding: 12,
+                        callbacks: { label: ctx => `${ctx.dataset.label}: ${fmt(ctx.parsed.y)}` }
+                    }
+                },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(139, 92, 246, 0.08)' }, ticks: { callback: v => fmt(v) } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    function renderStackedDaerah(data2026) {
+        const labels = data2026.districts.map(d => d.daerah);
+        const gunaPct = [];
+        const bakiPct = [];
+        const bazirPct = [];
+
+        data2026.districts.forEach(d => {
+            // Menggunakan (Guna + Baki + Bazir) sebagai Asas Jumlah untuk kira peratusan
+            const total = d.totalUsage + d.bakiSemasa + d.bazir; 
+            if (total > 0) {
+                gunaPct.push(((d.totalUsage / total) * 100).toFixed(1));
+                bakiPct.push(((d.bakiSemasa / total) * 100).toFixed(1));
+                bazirPct.push(((d.bazir / total) * 100).toFixed(1));
+            } else {
+                gunaPct.push(0); bakiPct.push(0); bazirPct.push(0);
+            }
+        });
+
+        const ctx = document.getElementById('chartStackedDaerah').getContext('2d');
+        charts.stacked = new Chart(ctx, {
+            type: 'bar',
+            plugins: [ChartDataLabels],
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'Penggunaan (%)', data: gunaPct, backgroundColor: 'rgba(251, 113, 133, 0.8)', borderColor: '#fb7185', borderWidth: 1 },
+                    { label: 'Baki (%)', data: bakiPct, backgroundColor: 'rgba(52, 211, 153, 0.8)', borderColor: '#34d399', borderWidth: 1 },
+                    { label: 'Bazir (%)', data: bazirPct, backgroundColor: 'rgba(239, 68, 68, 0.8)', borderColor: '#ef4444', borderWidth: 1 }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false, // Disetkan pada false supaya container height = 450px berkesan
+                plugins: {
+                    legend: { position: 'bottom' },
+                    datalabels: {
+                        color: '#ffffff',
+                        font: { weight: 'bold', size: 10 },
+                        formatter: (value) => value > 0 ? `${value}%` : ''
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        borderColor: 'rgba(99,102,241,0.3)', borderWidth: 1, padding: 12,
+                        callbacks: {
+                            label: ctx => {
+                                const district = data2026.districts[ctx.dataIndex];
+                                let absVal = 0;
+                                if(ctx.datasetIndex === 0) absVal = district.totalUsage;
+                                else if(ctx.datasetIndex === 1) absVal = district.bakiSemasa;
+                                else if(ctx.datasetIndex === 2) absVal = district.bazir;
+                                return `${ctx.dataset.label}: ${ctx.raw}% (${fmt(absVal)} unit)`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { stacked: true, grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45 } },
+                    y: { stacked: true, max: 100, ticks: { callback: v => v + '%' }, grid: { color: 'rgba(139, 92, 246, 0.08)' } }
+                }
+            }
+        });
+    }
+
+    // ============================================================
+    // INIT
+    // ============================================================
     async function init() {
         const overlay = document.getElementById('loadingOverlay');
         const errorBanner = document.getElementById('errorBanner');
 
         try {
             const [rows2024, rows2025, rows2026] = await Promise.all([
-                fetchSheet(SHEETS['2024'].gid),
-                fetchSheet(SHEETS['2025'].gid),
-                fetchSheet(SHEETS['2026'].gid)
+                fetch(csvUrl(SHEETS['2024'].gid)).then(r => r.text()).then(parseCSV),
+                fetch(csvUrl(SHEETS['2025'].gid)).then(r => r.text()).then(parseCSV),
+                fetch(csvUrl(SHEETS['2026'].gid)).then(r => r.text()).then(parseCSV)
             ]);
 
             const data2024 = parse2024(rows2024);
             const data2025 = parseYearly(rows2025);
             const data2026 = parseYearly(rows2026);
 
-            if (!data2024.totals || !data2025.totals || !data2026.totals) {
-                throw new Error('Struktur data spreadsheet tidak dikenali. Sila pastikan format spreadsheet betul.');
-            }
-
             renderSummary(data2024, data2025, data2026);
-            renderChartKeseluruhan(data2024, data2025, data2026);
-            renderChartTrend(data2025, data2026);
-            renderChartDaerah('chartDaerah2025', data2025, '2025', 'rgba(99, 102, 241, 0.6)', 'rgba(251, 113, 133, 0.6)');
-            renderChartDaerah('chartDaerah2026', data2026, '2026', 'rgba(34, 211, 238, 0.6)', 'rgba(251, 191, 36, 0.6)');
-            renderChartBaki(data2025, data2026);
-            renderDonut2026(data2026);
-            renderChartBazir(data2026);
+            
+            // Render the 4 requested components
             renderTable2026(data2026);
+            renderChartTrend(data2025, data2026);
+            renderChartRumusan2026(data2026);
+            renderStackedDaerah(data2026);
 
             const now = new Date();
             document.querySelector('#lastUpdated span').textContent =
                 `Dikemas kini: ${now.toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric' })} ${now.toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit' })}`;
 
         } catch (err) {
-            console.error('Error loading dashboard:', err);
+            console.error(err);
             errorBanner.style.display = 'block';
-            errorBanner.innerHTML = `
-                <strong>⚠ Ralat memuatkan data:</strong> ${err.message}<br>
-                <small>Pastikan spreadsheet Google Sheets boleh diakses secara awam (Share → Anyone with the link → Viewer).</small>
-            `;
+            errorBanner.innerHTML = `<strong>⚠ Ralat memuatkan data:</strong> Sila pastikan spreadsheet awam boleh diakses.`;
         } finally {
             overlay.classList.add('hidden');
         }
