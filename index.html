@@ -373,7 +373,7 @@
     <div class="container">
         <header class="header" id="header">
             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Coat_of_arms_of_Malaysia.svg/300px-Coat_of_arms_of_Malaysia.svg.png" alt="Jata Negara" style="height: 110px; width: auto; margin-bottom: 16px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.08));">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/2/26/Coat_of_arms_of_Malaysia.svg" alt="Jata Negara" style="height: 110px; width: auto; margin-bottom: 16px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.08));">
                 <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.05em; margin: 0; line-height: 1.4;">
                     Kementerian Kesihatan Malaysia<br>
                     Jabatan Kesihatan Negeri Kedah
@@ -427,6 +427,13 @@
         </div>
 
         <div class="charts-grid">
+            <div class="chart-card full-width fade-in" id="tableCard">
+                <h2>📋 Jadual Terperinci — 2026 (Mengikut Bulan)</h2>
+                <div class="table-wrapper" id="tableWrapper">
+                    <p style="text-align:center; color: var(--text-muted); padding: 40px;">Memuatkan jadual...</p>
+                </div>
+            </div>
+
             <div class="chart-card fade-in" id="chartCard1">
                 <h2>📊 Rumusan Keseluruhan: Stok vs Penggunaan vs Baki</h2>
                 <canvas id="chartKeseluruhan"></canvas>
@@ -461,13 +468,6 @@
                 <h2>🗑️ Pemantauan iFOBT Bazir / Rosak Mengikut Daerah — 2026</h2>
                 <div style="max-height: 400px; display: flex; justify-content: center;">
                     <canvas id="chartBazir2026"></canvas>
-                </div>
-            </div>
-
-            <div class="chart-card full-width fade-in" id="tableCard">
-                <h2>📋 Jadual Terperinci — 2026 (Mengikut Bulan)</h2>
-                <div class="table-wrapper" id="tableWrapper">
-                    <p style="text-align:center; color: var(--text-muted); padding: 40px;">Memuatkan jadual...</p>
                 </div>
             </div>
         </div>
@@ -973,7 +973,6 @@
         });
     }
 
-    // Fungsi baru untuk render graf bar Bazir berserta label nombor sebenar
     function renderChartBazir(data2026) {
         const labels = data2026.districts.map(d => d.daerah);
         const bazirData = data2026.districts.map(d => d.bazir);
@@ -981,7 +980,7 @@
         const ctx = document.getElementById('chartBazir2026').getContext('2d');
         charts.bazir = new Chart(ctx, {
             type: 'bar',
-            plugins: [ChartDataLabels], // Menggunakan plugin chartjs-plugin-datalabels
+            plugins: [ChartDataLabels],
             data: {
                 labels,
                 datasets: [{
@@ -1004,7 +1003,7 @@
                         align: 'top',
                         font: { weight: 'bold', size: 11 },
                         formatter: function(value) {
-                            return value > 0 ? fmt(value) : ''; // Sembunyikan label jika 0
+                            return value > 0 ? fmt(value) : ''; 
                         }
                     },
                     tooltip: {
@@ -1020,7 +1019,7 @@
                 scales: {
                     y: {
                         beginAtZero: true,
-                        grace: '10%', // Memberi ruang ekstra di atas bar bagi laluan text datalabels
+                        grace: '10%',
                         grid: { color: 'rgba(139, 92, 246, 0.08)' },
                         ticks: { callback: v => fmt(v) }
                     },
@@ -1045,7 +1044,6 @@
         let html = '<table><thead><tr>';
         html += '<th>Daerah</th><th>C/F 2025</th><th>Terima JKN</th><th>Jum. Stok</th>';
         activeMonths.forEach(m => html += `<th>${m}</th>`);
-        // Menambah lajur Bazir
         html += '<th>Jum. Guna</th><th>Baki</th><th>Bazir</th>';
         html += '</tr></thead><tbody>';
 
@@ -1118,7 +1116,7 @@
             renderChartDaerah('chartDaerah2026', data2026, '2026', 'rgba(34, 211, 238, 0.6)', 'rgba(251, 191, 36, 0.6)');
             renderChartBaki(data2025, data2026);
             renderDonut2026(data2026);
-            renderChartBazir(data2026); // Render graf bar Bazir yang baru ditambah
+            renderChartBazir(data2026);
             renderTable2026(data2026);
 
             const now = new Date();
