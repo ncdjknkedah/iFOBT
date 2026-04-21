@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Pemantauan CRC Kedah | Dashboard & Laporan</title>
+    <meta name="description" content="Dashboard Pemantauan & Aktiviti Saringan Kanser Kolorektal - JKN Kedah">
+    
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        :root {
+            /* Colors - Blue Ribbon/Colorectal Awareness Theme */
+            --primary: #1e40af;
+            --primary-light: #3b82f6;
+            --secondary: #60a5fa;
+            --accent: #0ea5e9;
+            --bg-body: #f0f4f8;
+            --bg-sidebar: #ffffff;
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #cbd5e1;
+            --sidebar-width: 280px;
+            --sidebar-collapsed: 80px;
+            --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+            --shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            --glass: rgba(255, 255, 255, 0.8);
+            --gradient: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        }
+
+        [data-theme="dark"] {
+            /* Basic dark mode support - can be expanded */
+            --bg-body: #0f172a;
+            --bg-sidebar: #1e293b;
+            --bg-card: #1e293b;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-body); color: var(--text-main); overflow-x: hidden; transition: background 0.3s ease; }
+
+        /* App Wrapper */
+        .app-wrapper { display: flex; min-height: 100vh; }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            position: fixed;
+            height: 100vh;
+            left: 0; top: 0;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .sidebar.collapsed { width: var(--sidebar-collapsed); }
+
+        .sidebar-header {
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .logo-box {
+            width: 40px; height: 40px;
+            background: var(--gradient);
+            border-radius: 10px;
+            display: flex;
+            align-items: center; justify-content: center;
+            color: white;
+            flex-shrink: 0;
+        }
+        .sidebar-title { font-weight: 800; font-size: 1.1rem; line-height: 1.2; transition: opacity 0.3s; white-space: nowrap; }
+        .sidebar.collapsed .sidebar-title { opacity: 0; width: 0; overflow: hidden; }
+
+        .nav-menu { flex: 1; padding: 20px 12px; display: flex; flex-direction: column; gap: 8px; }
+        .nav-item {
+            display: flex; align-items: center;
+            padding: 12px; gap: 12px;
+            border-radius: 12px;
+            color: var(--text-muted);
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .nav-item:hover { background: #f9fafb; color: var(--primary); }
+        .nav-item.active { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); }
+        .nav-item i { width: 20px; text-align: center; }
+        .nav-label { font-weight: 500; font-size: 0.95rem; }
+        .sidebar.collapsed .nav-label { display: none; }
+
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            padding: 32px;
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .sidebar.collapsed + .main-content { margin-left: var(--sidebar-collapsed); }
+
+        /* Utility Components */
+        .header-top {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            margin-bottom: 40px;
+        }
+        .page-info h1 { font-size: 1.8rem; font-weight: 800; letter-spacing: -0.02em; }
+        .page-info p { color: var(--text-muted); margin-top: 4px; }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 24px;
+        }
+
+        /* Summary Stats */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-bottom: 32px; }
+        .stat-card {
+            background: white; border-radius: 20px; padding: 24px;
+            border: 1px solid var(--border);
+            display: flex; align-items: center; gap: 20px;
+        }
+        .stat-icon {
+            width: 54px; height: 54px; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .stat-value { font-size: 1.6rem; font-weight: 800; }
+        .stat-label { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+
+        /* Tables */
+        .table-container { overflow-x: auto; margin-top: 20px; border-radius: 12px; border: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; text-align: left; }
+        th { background: #f9fafb; padding: 14px 20px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; font-size: 0.75rem; border-bottom: 1px solid var(--border); }
+        td { padding: 14px 20px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background: #f8fafc; }
+
+        .badge {
+            padding: 4px 10px; border-radius: 100px; font-size: 0.75rem; font-weight: 600; text-transform: capitalize;
+        }
+        .badge-positive { background: #fee2e2; color: #ef4444; }
+        .badge-negative { background: #dcfce7; color: #10b981; }
+
+        /* Tabs within Report */
+        .tab-nav { display: flex; gap: 4px; margin-bottom: 24px; background: #e2e8f0; padding: 4px; border-radius: 12px; width: fit-content; }
+        .tab-btn {
+            padding: 8px 20px; border-radius: 8px; border: none; cursor: pointer;
+            font-weight: 600; font-size: 0.85rem; transition: all 0.2s; background: transparent; color: var(--text-muted);
+        }
+        .tab-btn.active { background: white; color: var(--primary); box-shadow: var(--shadow-sm); }
+
+        /* Loader */
+        .loader-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-body); z-index: 2000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.5s, visibility 0.5s;
+        }
+        .loader-overlay.hidden { opacity: 0; visibility: hidden; }
+        .spinner { width: 50px; height: 50px; border: 4px solid #eef2ff; border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Search & Filters */
+        .controls { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+        .input-group { flex: 1; min-width: 200px; position: relative; }
+        .input-group input { 
+            width: 100%; padding: 12px 16px 12px 42px; border-radius: 12px; border: 1px solid var(--border);
+            font-family: inherit; font-size: 0.95rem; outline: none; transition: border 0.2s;
+        }
+        .input-group input:focus { border-color: var(--primary); }
+        .input-group i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar { width: var(--sidebar-collapsed); }
+            .sidebar .sidebar-title, .sidebar .nav-label { display: none; }
+            .main-content { margin-left: var(--sidebar-collapsed); }
+        }
+        @media (max-width: 768px) {
+            .main-content { padding: 16px; }
+            .stats-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px;
+            border-radius: 12px; font-weight: 600; font-size: 0.9rem; cursor: pointer;
+            transition: all 0.2s; border: none;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: #4338ca; }
+        .btn-outline { background: white; border: 1px solid var(--border); color: var(--text-main); }
+        .btn-outline:hover { background: #f9fafb; }
+    </style>
+</head>
+<body>
+
+    <div class="loader-overlay" id="loader">
+        <div class="spinner"></div>
+        <p style="margin-top: 16px; font-weight: 500;">Memuatkan data sistem...</p>
+    </div>
+
+    <div class="app-wrapper">
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-box">
+                    <i data-lucide="shield-check"></i>
+                </div>
+                <div class="sidebar-title">
+                    <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Portal Monitoring</div>
+                    CRC KEDAH
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <div class="nav-item active" onclick="switchTab('overview')" data-tab="overview">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span class="nav-label">Ringkasan Eksekutif</span>
+                </div>
+                <div class="nav-item" onclick="switchTab('stok')" data-tab="stok">
+                    <i data-lucide="package"></i>
+                    <span class="nav-label">Pemantauan Stok iFOBT</span>
+                </div>
+                <div class="nav-item" onclick="switchTab('database')" data-tab="database">
+                    <i data-lucide="database"></i>
+                    <span class="nav-label">Aktiviti Saringan</span>
+                </div>
+                <div class="nav-item" onclick="switchTab('laporan')" data-tab="laporan">
+                    <i data-lucide="file-text"></i>
+                    <span class="nav-label">Laporan Reten</span>
+                </div>
+            </nav>
+
+            <div style="padding: 24px; border-top: 1px solid var(--border);">
+                <div class="nav-item" onclick="toggleSidebar()">
+                    <i data-lucide="menu"></i>
+                    <span class="nav-label">Collapse Menu</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            
+            <section id="view-overview" class="view">
+                <div class="header-top">
+                    <div class="page-info">
+                        <h1>🏠 Ringkasan Eksekutif</h1>
+                        <p>Status terkini program saringan kanser kolorektal Negeri Kedah</p>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card" style="border-left: 5px solid var(--primary);">
+                        <div>
+                            <div class="stat-label">Jumlah Saringan (2026)</div>
+                            <div class="stat-value" id="over-scr-total">-</div>
+                        </div>
+                    </div>
+                    <div class="stat-card" style="border-left: 5px solid var(--secondary);">
+                        <div>
+                            <div class="stat-label">iFOBT Positif</div>
+                            <div class="stat-value" id="over-scr-pos">-</div>
+                        </div>
+                    </div>
+                    <div class="stat-card" style="border-left: 5px solid var(--accent);">
+                        <div>
+                            <div class="stat-label">Kadar Selesai Scope</div>
+                            <div class="stat-value" id="over-scr-scope">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid" style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+                    <div class="card">
+                        <h2 style="font-size: 1.1rem; margin-bottom: 20px;">📊 Saringan Mengikut Kategori</h2>
+                        <div style="height: 300px;"><canvas id="chartOverviewCat"></canvas></div>
+                    </div>
+                    <div class="card">
+                        <h2 style="font-size: 1.1rem; margin-bottom: 20px;">🏥 Status Stok Semasa</h2>
+                        <div style="height: 300px;"><canvas id="chartOverviewStok"></canvas></div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-stok" class="view" style="display: none;">
+                <div class="header-top">
+                    <div class="page-info">
+                        <h1>📦 Pemantauan Stok iFOBT</h1>
+                        <p>Analisis kit saringan mengikut daerah dan bulan (Tahun 2026)</p>
+                    </div>
+                </div>
+
+                <div class="stats-grid" id="stok-stats">
+                    <!-- Dynamic -->
+                </div>
+
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2 style="font-size: 1.1rem; font-weight: 700;">Trend Penggunaan Bulanan (2025 vs 2026)</h2>
+                    </div>
+                    <div style="height: 350px;">
+                        <canvas id="chartTrend"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 20px;">📋 Jadual Terperinci Fasiliti (2026)</h2>
+                    <div class="table-container" id="stok-table-wrapper">
+                        <!-- Table -->
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-database" class="view" style="display: none;">
+                <div class="header-top">
+                    <div class="page-info">
+                        <h1>🗂 Pangkalan Data Saringan</h1>
+                        <p>Senarai lengkap rekod aktiviti saringan dari lapangan</p>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <div class="input-group">
+                        <i data-lucide="search"></i>
+                        <input type="text" id="dbSearch" placeholder="Cari Nama, No K/P, atau PKD..." onkeyup="filterDatabase()">
+                    </div>
+                    <select id="filterDaerah" class="btn btn-outline" onchange="filterDatabase()">
+                        <option value="">Semua Daerah</option>
+                    </select>
+                </div>
+
+                <div class="card">
+                    <div class="table-container" id="db-table-wrapper">
+                        <!-- Database Table -->
+                    </div>
+                    <div id="db-pagination" style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center;">
+                        <span id="pageInfo" style="font-size: 0.85rem; color: var(--text-muted);">Menunjukkan rekod 1-50</span>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-outline" onclick="changePage(-1)">Sebelumnya</button>
+                            <button class="btn btn-outline" onclick="changePage(1)">Seterusnya</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-laporan" class="view" style="display: none;">
+                <div class="header-top">
+                    <div class="page-info">
+                        <h1>📊 Penjanaan Laporan Reten</h1>
+                        <p>Pilih kategori laporan untuk dianalisa dan dimuat turun</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="exportToPDF()">
+                        <i data-lucide="download"></i> Muat Turun PDF
+                    </button>
+                </div>
+
+                <div class="tab-nav">
+                    <button class="tab-btn active" onclick="switchReten('4a')">Reten 4(a)</button>
+                    <button class="tab-btn" onclick="switchReten('4b')">Reten 4(b)</button>
+                    <button class="tab-btn" onclick="switchReten('4c')">Reten 4(c)</button>
+                </div>
+
+                <div id="reten-content" class="card">
+                    <!-- Reten Table Content -->
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        // CONFIGURATION
+        const STOCK_ID = '1QuIJkvtyRHAJVGIArRb5W1UwyTxAfhAN0Iydw8Cs8Og';
+        const ACTIVITY_ID = '1ZOFEcNOICoxMyVFX6-9GIYYN7ZcgEBO6Q7ddZ0MFcW8';
+        
+        const SHEETS = {
+            stok2025: '1888588564',
+            stok2026: '1668827922',
+            database: '683531209'
+        };
+
+        // GLOBAL APP STATE
+        let appState = {
+            stokData: { 2025: null, 2026: null },
+            databaseRaw: [],
+            databaseFiltered: [],
+            currentPage: 1,
+            pageSize: 30,
+            activeReten: '4a',
+            charts: {}
+        };
+
+        // INITIALIZATION
+        async function init() {
+            try {
+                lucide.createIcons();
+                // 1. Fetch data in parallel
+                const [s25, s26, db] = await Promise.all([
+                    fetchCSV(STOCK_ID, SHEETS.stok2025),
+                    fetchCSV(STOCK_ID, SHEETS.stok2026),
+                    fetchCSV(ACTIVITY_ID, SHEETS.database)
+                ]);
+
+                appState.stokData[2025] = s25;
+                appState.stokData[2026] = s26;
+                appState.databaseRaw = db;
+                appState.databaseFiltered = db;
+
+                // 2. Populate filters
+                populateFilters();
+
+                // 3. Render initial views
+                renderOverview();
+                renderStokView();
+                renderDatabaseTable();
+                renderRetenView();
+
+                document.getElementById('loader').classList.add('hidden');
+            } catch (error) {
+                console.error("Initialization Failed:", error);
+                alert("Ralat memuatkan data. Sila periksa sambungan internet.");
+            }
+        }
+
+        // FETCHING CORE
+        async function fetchCSV(id, gid) {
+            const url = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv&gid=${gid}`;
+            const response = await fetch(url);
+            const text = await response.text();
+            return new Promise((resolve) => {
+                Papa.parse(text, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: (results) => resolve(results.data)
+                });
+            });
+        }
+
+        // NAVIGATION LOGIC
+        function switchTab(tabId) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.querySelector(`.nav-item[data-tab="${tabId}"]`).classList.add('active');
+            
+            document.querySelectorAll('.view').forEach(el => el.style.display = 'none');
+            document.getElementById(`view-${tabId}`).style.display = 'block';
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+        }
+
+        // VIEW: OVERVIEW
+        function renderOverview() {
+            const db = appState.databaseRaw;
+            const stok26 = appState.stokData[2026];
+            const totalStok = stok26.find(r => r['BIL'] === '12' || r['NAMA DAERAH'] === 'JUMLAH');
+
+            const totalScr = db.length;
+            const posScr = db.filter(r => r['POSITIF IFOBT (LAB)'] === 'YA' || r['POSITIF (SELF)'] === 'YA').length;
+            const scoped = db.filter(r => (r['KOLONOSKOPI (HADIR/ TIDAK PERLU/ CICIR/ REFUSED/ BELUM DIJALANKAN )'] || '').includes('HADIR')).length;
+            
+            document.getElementById('over-scr-total').innerText = fmt(totalScr);
+            document.getElementById('over-scr-pos').innerText = fmt(posScr);
+            document.getElementById('over-scr-scope').innerText = totalScr > 0 ? ((scoped/posScr)*100).toFixed(1) + "%" : "0%";
+
+            // Chart categories
+            const catCounts = { 'Asimtomatik': 0, 'Gejala': 0, 'Risiko': 0 };
+            db.forEach(r => {
+                if(r['BERGEJALA '] === 'YA') catCounts['Gejala']++;
+                else if(r['BERISIKO'] === 'YA') catCounts['Risiko']++;
+                else catCounts['Asimtomatik']++;
+            });
+
+            if(appState.charts.overCat) appState.charts.overCat.destroy();
+            appState.charts.overCat = new Chart(document.getElementById('chartOverviewCat'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(catCounts),
+                    datasets: [{
+                        label: 'Bilangan Pesakit',
+                        data: Object.values(catCounts),
+                        backgroundColor: ['#1e40af', '#3b82f6', '#60a5fa'],
+                        borderRadius: 8
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // Chart Stok Simple
+            if(appState.charts.overStok) appState.charts.overStok.destroy();
+            appState.charts.overStok = new Chart(document.getElementById('chartOverviewStok'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Guna', 'Baki', 'Bazir'],
+                    datasets: [{
+                        data: [num(totalStok['JUMLAH PENGGUNAAN']), num(totalStok['BAKI STOK BIASA']), num(totalStok['JUMLAH BAZIR/ROSAK'])],
+                        backgroundColor: ['#ef4444', '#10b981', '#f59e0b']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        // VIEW: STOK
+        function renderStokView() {
+            const data26 = appState.stokData[2026];
+            // Identify total row (usually the one with "JUMLAH" in district/name field)
+            // Based on previous code, total is at index where "BIL" is 12 or name is JUMLAH
+            const totalObj = data26.find(row => row['BIL'] === '12' || row['NAMA DAERAH'] === 'JUMLAH');
+            
+            if(!totalObj) return;
+
+            const html = `
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #eef2ff; color: #4f46e5;"><i data-lucide="package"></i></div>
+                    <div>
+                        <div class="stat-label">Jumlah Stok 2026</div>
+                        <div class="stat-value">${fmt(totalObj['JUMLAH STOK'])}</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #fff1f2; color: #e11d48;"><i data-lucide="trending-up"></i></div>
+                    <div>
+                        <div class="stat-label">Penggunaan Terkumpul</div>
+                        <div class="stat-value">${fmt(totalObj['JUMLAH PENGGUNAAN'])}</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #ecfdf5; color: #10b981;"><i data-lucide="activity"></i></div>
+                    <div>
+                        <div class="stat-label">Baki Semasa</div>
+                        <div class="stat-value" style="color: #10b981;">${fmt(totalObj['BAKI STOK BIASA'])}</div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('stok-stats').innerHTML = html;
+            lucide.createIcons();
+
+            // Render Charts & Table (Integration of previous logic)
+            renderStokTrends();
+            renderDistrictStokTable();
+        }
+
+        function renderStokTrends() {
+            const ctx = document.getElementById('chartTrend').getContext('2d');
+            const months = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogo','Sep','Okt','Nov','Dis'];
+            
+            const findMonthlyData = (year) => {
+                const row = appState.stokData[year].find(r => r['BIL'] === '12' || r['NAMA DAERAH'] === 'JUMLAH');
+                return months.map(m => num(row[m.toUpperCase()]));
+            };
+
+            const data25 = findMonthlyData(2025);
+            const data26 = findMonthlyData(2026);
+
+            if(appState.charts.trend) appState.charts.trend.destroy();
+            appState.charts.trend = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [
+                        { label: '2025', data: data25, borderColor: '#94a3b8', tension: 0.4, borderDash: [5,5] },
+                        { label: '2026', data: data26, borderColor: '#1e40af', tension: 0.4, borderWidth: 3 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        function renderDistrictStokTable() {
+            const data26 = appState.stokData[2026];
+            const districts = data26.filter(r => num(r['BIL']) >= 1 && num(r['BIL']) <= 11);
+            
+            let html = `<table><thead><tr>
+                <th>Daerah</th><th>C/F 2025</th><th>Terima</th><th>Jumlah</th><th>Guna</th><th>Baki</th><th>Bazir</th>
+            </tr></thead><tbody>`;
+
+            districts.forEach(d => {
+                html += `<tr>
+                    <td><strong>${d['NAMA DAERAH']}</strong></td>
+                    <td style="color: var(--text-muted)">${fmt(d['C/F DARI TAHUN 2025'])}</td>
+                    <td>${fmt(d['JUMLAH TERIMA DARI JKN'])}</td>
+                    <td style="font-weight:700">${fmt(d['JUMLAH STOK'])}</td>
+                    <td style="color: #ef4444; font-weight:700">${fmt(d['JUMLAH PENGGUNAAN'])}</td>
+                    <td style="color: #10b981; font-weight:700">${fmt(d['BAKI STOK BIASA'])}</td>
+                    <td>${fmt(d['JUMLAH BAZIR/ROSAK'])}</td>
+                </tr>`;
+            });
+            html += `</tbody></table>`;
+            document.getElementById('stok-table-wrapper').innerHTML = html;
+        }
+
+        // VIEW: DATABASE
+        function populateFilters() {
+            const pkds = [...new Set(appState.databaseRaw.map(r => r['NAMA PKD']))].filter(Boolean);
+            const select = document.getElementById('filterDaerah');
+            pkds.sort().forEach(pkd => {
+                const opt = document.createElement('option');
+                opt.value = pkd; opt.innerText = pkd;
+                select.appendChild(opt);
+            });
+        }
+
+        function filterDatabase() {
+            const query = document.getElementById('dbSearch').value.toLowerCase();
+            const pkdFilter = document.getElementById('filterDaerah').value;
+
+            appState.databaseFiltered = appState.databaseRaw.filter(r => {
+                const matchesSearch = !query || 
+                    (r['NAMA'] || '').toLowerCase().includes(query) || 
+                    (r['NO K/P'] || '').includes(query) || 
+                    (r['NAMA KK'] || '').toLowerCase().includes(query);
+                
+                const matchesPKD = !pkdFilter || r['NAMA PKD'] === pkdFilter;
+
+                return matchesSearch && matchesPKD;
+            });
+
+            appState.currentPage = 1;
+            renderDatabaseTable();
+        }
+
+        function renderDatabaseTable() {
+            const start = (appState.currentPage - 1) * appState.pageSize;
+            const pageData = appState.databaseFiltered.slice(start, start + appState.pageSize);
+            
+            let html = `<table><thead><tr>
+                <th>No</th><th>Bulan</th><th>Klinik</th><th>Nama Pesakit</th><th>No K/P</th><th>Umur</th><th>Kategori</th><th>Keputusan</th>
+            </tr></thead><tbody>`;
+
+            pageData.forEach((r, idx) => {
+                const cat = getCategory(r);
+                const res = (r['NEGATIF IFOBT (LAB)'] === 'YA' || r['NEGATIF (SELF)'] === 'YA') ? 'NEG' : 
+                          (r['POSITIF IFOBT (LAB)'] === 'YA' || r['POSITIF (SELF)'] === 'YA') ? 'POS' : '-';
+                
+                html += `<tr>
+                    <td>${start + idx + 1}</td>
+                    <td>${r['BULAN RETEN']}</td>
+                    <td><small>${r['NAMA PKD']}</small><br>${r['NAMA KK']}</td>
+                    <td><div style="font-weight:600">${r['NAMA']}</div></td>
+                    <td class="num">${r['NO K/P']}</td>
+                    <td class="num">${r['UMUR']}</td>
+                    <td><span class="badge" style="background:#f1f5f9">${cat}</span></td>
+                    <td><span class="badge badge-${res === 'POS' ? 'positive' : 'negative'}">${res}</span></td>
+                </tr>`;
+            });
+
+            html += `</tbody></table>`;
+            document.getElementById('db-table-wrapper').innerHTML = html;
+            document.getElementById('pageInfo').innerText = `Menunjukkan ${start+1} - ${Math.min(start + appState.pageSize, appState.databaseFiltered.length)} daripada ${appState.databaseFiltered.length} rekod`;
+        }
+
+        function changePage(delta) {
+            const maxPage = Math.ceil(appState.databaseFiltered.length / appState.pageSize);
+            appState.currentPage = Math.max(1, Math.min(appState.currentPage + delta, maxPage));
+            renderDatabaseTable();
+        }
+
+        function getCategory(r) {
+            if(r['BERGEJALA '] === 'YA') return 'Gejala';
+            if(r['BERISIKO'] === 'YA') return 'Risiko';
+            return 'Primer (iFOBT)';
+        }
+
+        // VIEW: LAPORAN (RETEN)
+        function switchReten(type) {
+            appState.activeReten = type;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.tab-btn[onclick="switchReten('${type}')"]`).classList.add('active');
+            renderRetenView();
+        }
+
+        function renderRetenView() {
+            const type = appState.activeReten;
+            let filtered = [];
+            let title = "";
+
+            if(type === '4a') {
+                filtered = appState.databaseRaw.filter(r => !r['BERGEJALA '] && !r['BERISIKO'] && num(r['UMUR']) >= 50 && num(r['UMUR']) <= 75);
+                title = "Laporan Saringan Kolorektal iFOBT (Asimtomatik 50-75)";
+            } else if(type === '4b') {
+                filtered = appState.databaseRaw.filter(r => r['BERGEJALA '] === 'YA');
+                title = "Laporan Kes Bergejala (Symptomatic)";
+            } else {
+                filtered = appState.databaseRaw.filter(r => r['BERISIKO'] === 'YA');
+                title = "Laporan Kumpulan Berisiko Tinggi (Family History)";
+            }
+
+            // Summarize by PKD
+            const summary = {};
+            filtered.forEach(r => {
+                const pkd = r['NAMA PKD'] || 'TIADA PKD';
+                if(!summary[pkd]) summary[pkd] = { total: 0, pos: 0, neg: 0, scoped: 0 };
+                summary[pkd].total++;
+                if(r['POSITIF IFOBT (LAB)'] === 'YA' || r['POSITIF (SELF)'] === 'YA') summary[pkd].pos++;
+                if(r['NEGATIF IFOBT (LAB)'] === 'YA' || r['NEGATIF (SELF)'] === 'YA') summary[pkd].neg++;
+                if(r['KOLONOSKOPI (HADIR/ TIDAK PERLU/ CICIR/ REFUSED/ BELUM DIJALANKAN )'] === 'HADIR') summary[pkd].scoped++;
+            });
+
+            let html = `<div style="padding-bottom: 20px; border-bottom: 1px solid var(--border); margin-bottom: 20px;">
+                <h3 style="font-size: 1rem;">${title}</h3>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">Data dikira secara automatik berdasarkan pangkalan data semasa.</p>
+            </div>
+            <table><thead><tr>
+                <th>Daerah (PKD)</th><th>Jumlah Didata</th><th>iFOBT Positif</th><th>iFOBT Negatif</th><th>Kadar Positif (%)</th><th>Selesai Scope</th>
+            </tr></thead><tbody>`;
+
+            Object.keys(summary).sort().forEach(pkd => {
+                const s = summary[pkd];
+                const rate = ((s.pos / s.total) * 100).toFixed(1);
+                html += `<tr>
+                    <td><strong>${pkd}</strong></td>
+                    <td class="num">${s.total}</td>
+                    <td class="num" style="color: #ef4444">${s.pos}</td>
+                    <td class="num" style="color: #10b981">${s.neg}</td>
+                    <td class="num">${rate}%</td>
+                    <td class="num">${s.scoped}</td>
+                </tr>`;
+            });
+
+            html += `</tbody></table>`;
+            document.getElementById('reten-content').innerHTML = html;
+        }
+
+        // PDF EXPORT
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            const type = appState.activeReten;
+            
+            // Header
+            doc.setFontSize(14);
+            doc.text("KEMENTERIAN KESIHATAN MALAYSIA", 105, 15, { align: 'center' });
+            doc.setFontSize(12);
+            doc.text("Laporan Reten 4(" + type.slice(-1) + ") - Saringan Kanser Kolorektal Kedah 2026", 105, 22, { align: 'center' });
+            
+            doc.autoTable({
+                html: '#reten-content table',
+                startY: 30,
+                theme: 'grid',
+                styles: { fontSize: 8, cellPadding: 3 },
+                headStyles: { fillColor: [30, 64, 175] }
+            });
+            
+            doc.save(`Laporan_Reten_4${type}_Kedah.pdf`);
+        }
+
+        // HELPERS
+        function num(v) { 
+            if(!v) return 0;
+            const n = parseFloat(String(v).replace(/[^0-9.\-]/g, ''));
+            return isNaN(n) ? 0 : n;
+        }
+        function fmt(v) { return num(v).toLocaleString('ms-MY'); }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
