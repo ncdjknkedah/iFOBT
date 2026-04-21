@@ -369,17 +369,22 @@
                 <div class="header-top">
                     <div class="page-info">
                         <h1>📊 Penjanaan Laporan Reten</h1>
-                        <p>Pilih kategori laporan untuk dianalisa dan dimuat turun</p>
+                        <p>Pilih kategori laporan dan bulan untuk dianalisa</p>
                     </div>
-                    <button class="btn btn-primary" onclick="exportToPDF()">
-                        <i data-lucide="download"></i> Muat Turun PDF
-                    </button>
                 </div>
 
-                <div class="tab-nav">
-                    <button class="tab-btn active" onclick="switchReten('4a')">Reten 4(a)</button>
-                    <button class="tab-btn" onclick="switchReten('4b')">Reten 4(b)</button>
-                    <button class="tab-btn" onclick="switchReten('4c')">Reten 4(c)</button>
+                <div class="controls">
+                    <div class="tab-nav" style="margin-bottom: 0;">
+                        <button class="tab-btn active" onclick="switchReten('4a')">Reten 4(a)</button>
+                        <button class="tab-btn" onclick="switchReten('4b')">Reten 4(b)</button>
+                        <button class="tab-btn" onclick="switchReten('4c')">Reten 4(c)</button>
+                    </div>
+                    <select id="filterMonthReport" class="btn btn-outline" onchange="renderRetenView()" style="min-width: 150px;">
+                        <option value="">Semua Bulan (Terkumpul)</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="exportToPDF()" style="margin-left: auto;">
+                        <i data-lucide="download"></i> Muat Turun PDF
+                    </button>
                 </div>
 
                 <div id="reten-content" class="card">
@@ -387,11 +392,10 @@
                 </div>
             </section>
 
-        </main>
-    </div>
-
-    <script>
-        // CONFIGURATION
+           <script>
+        // ==========================================
+        // CONFIGURATION (Spreadsheet IDs & GIDs)
+        // ==========================================
         const STOCK_ID = '1QuIJkvtyRHAJVGIArRb5W1UwyTxAfhAN0Iydw8Cs8Og';
         const ACTIVITY_ID = '1ZOFEcNOICoxMyVFX6-9GIYYN7ZcgEBO6Q7ddZ0MFcW8';
         
@@ -401,9 +405,25 @@
             database: '683531209'
         };
 
+        // ==========================================
+        // DATA COLUMN MAPPING (Index-based)
+        // ==========================================
+        // Stok Indices (0-based)
+        const STOK_COL = {
+            BIL: 1, DAERAH: 2, CF: 3, TERIMA: 4, JUM_STOK: 5, JAN: 6, FEB: 7, MAC: 8, APR: 9, MEI: 10, JUN: 11, JUL: 12, OGO: 13, SEP: 14, OKT: 15, NOV: 16, DIS: 17, BAKI: 18, BAZIR: 19
+        };
+
+        // Database Indices (0-based)
+        const DB_COL = {
+            BIL: 0, BULAN: 1, PKD: 2, KK: 3, JENIS: 4, NAMA: 5, KP: 6, UMUR: 7, 
+            GEJALA: 10, RISIKO: 13, 
+            POS_LAB: 18, NEG_LAB: 19, POS_SELF: 21, NEG_SELF: 22, 
+            RUJUK_SOPD: 23, TCA_SOPD: 25, SCOPE: 26, SCOPE_RES: 28
+        };
+
         // GLOBAL APP STATE
         let appState = {
-            stokData: { 2025: null, 2026: null },
+            stokData: { 2025: [], 2026: [] },
             databaseRaw: [],
             databaseFiltered: [],
             currentPage: 1,
@@ -412,11 +432,13 @@
             charts: {}
         };
 
+        // ==========================================
         // INITIALIZATION
+        // ==========================================
         async function init() {
             try {
                 lucide.createIcons();
-                // 1. Fetch data in parallel
+                // Fetch all data
                 const [s25, s26, db] = await Promise.all([
                     fetchCSV(STOCK_ID, SHEETS.stok2025),
                     fetchCSV(STOCK_ID, SHEETS.stok2026),
@@ -425,13 +447,11 @@
 
                 appState.stokData[2025] = s25;
                 appState.stokData[2026] = s26;
-                appState.databaseRaw = db;
-                appState.databaseFiltered = db;
+                // Filter database to remove header row and empty rows
+                appState.databaseRaw = db.filter((r, i) => i > 0 && r[5] && r[5].trim() !== ""); 
+                appState.databaseFiltered = appState.databaseRaw;
 
-                // 2. Populate filters
                 populateFilters();
-
-                // 3. Render initial views
                 renderOverview();
                 renderStokView();
                 renderDatabaseTable();
@@ -440,56 +460,50 @@
                 document.getElementById('loader').classList.add('hidden');
             } catch (error) {
                 console.error("Initialization Failed:", error);
-                alert("Ralat memuatkan data. Sila periksa sambungan internet.");
+                alert("Ralat memuatkan data. Sila pastikan spreadsheet dikongsi secara awam ('Anyone with link can view').");
             }
         }
 
-        // FETCHING CORE
         async function fetchCSV(id, gid) {
             const url = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv&gid=${gid}`;
             const response = await fetch(url);
+            if (!response.ok) throw new Error("Gagal memuatkan GID: " + gid);
             const text = await response.text();
             return new Promise((resolve) => {
-                Papa.parse(text, {
-                    header: true,
-                    skipEmptyLines: true,
-                    complete: (results) => resolve(results.data)
-                });
+                Papa.parse(text, { header: false, skipEmptyLines: true, complete: (results) => resolve(results.data) });
             });
         }
 
-        // NAVIGATION LOGIC
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
+
         function switchTab(tabId) {
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            document.querySelector(`.nav-item[data-tab="${tabId}"]`).classList.add('active');
-            
+            const activeNav = document.querySelector(`.nav-item[data-tab="${tabId}"]`);
+            if(activeNav) activeNav.classList.add('active');
             document.querySelectorAll('.view').forEach(el => el.style.display = 'none');
             document.getElementById(`view-${tabId}`).style.display = 'block';
         }
 
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('collapsed');
-        }
-
+        // ==========================================
         // VIEW: OVERVIEW
+        // ==========================================
         function renderOverview() {
             const db = appState.databaseRaw;
             const stok26 = appState.stokData[2026];
-            const totalStok = stok26.find(r => r['BIL'] === '12' || r['NAMA DAERAH'] === 'JUMLAH');
+            const sumRow = stok26.find(r => (r[STOK_COL.DAERAH] || '').trim() === 'JUMLAH');
 
             const totalScr = db.length;
-            const posScr = db.filter(r => r['POSITIF IFOBT (LAB)'] === 'YA' || r['POSITIF (SELF)'] === 'YA').length;
-            const scoped = db.filter(r => (r['KOLONOSKOPI (HADIR/ TIDAK PERLU/ CICIR/ REFUSED/ BELUM DIJALANKAN )'] || '').includes('HADIR')).length;
+            const posScr = db.filter(r => r[DB_COL.POS_LAB] === 'YA' || r[DB_COL.POS_SELF] === 'YA').length;
+            const scoped = db.filter(r => (r[DB_COL.SCOPE] || '').includes('HADIR')).length;
             
             document.getElementById('over-scr-total').innerText = fmt(totalScr);
             document.getElementById('over-scr-pos').innerText = fmt(posScr);
-            document.getElementById('over-scr-scope').innerText = totalScr > 0 ? ((scoped/posScr)*100).toFixed(1) + "%" : "0%";
+            document.getElementById('over-scr-scope').innerText = posScr > 0 ? ((scoped/posScr)*100).toFixed(1) + "%" : "0%";
 
-            // Chart categories
             const catCounts = { 'Asimtomatik': 0, 'Gejala': 0, 'Risiko': 0 };
             db.forEach(r => {
-                if(r['BERGEJALA '] === 'YA') catCounts['Gejala']++;
-                else if(r['BERISIKO'] === 'YA') catCounts['Risiko']++;
+                if(r[DB_COL.GEJALA] === 'YA') catCounts['Gejala']++;
+                else if(r[DB_COL.RISIKO] === 'YA') catCounts['Risiko']++;
                 else catCounts['Asimtomatik']++;
             });
 
@@ -499,7 +513,7 @@
                 data: {
                     labels: Object.keys(catCounts),
                     datasets: [{
-                        label: 'Bilangan Pesakit',
+                        label: 'Bilangan Saringan',
                         data: Object.values(catCounts),
                         backgroundColor: ['#1e40af', '#3b82f6', '#60a5fa'],
                         borderRadius: 8
@@ -508,57 +522,48 @@
                 options: { responsive: true, maintainAspectRatio: false }
             });
 
-            // Chart Stok Simple
-            if(appState.charts.overStok) appState.charts.overStok.destroy();
-            appState.charts.overStok = new Chart(document.getElementById('chartOverviewStok'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['Guna', 'Baki', 'Bazir'],
-                    datasets: [{
-                        data: [num(totalStok['JUMLAH PENGGUNAAN']), num(totalStok['BAKI STOK BIASA']), num(totalStok['JUMLAH BAZIR/ROSAK'])],
-                        backgroundColor: ['#ef4444', '#10b981', '#f59e0b']
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
+            if(sumRow) {
+                if(appState.charts.overStok) appState.charts.overStok.destroy();
+                const guna = [6,7,8,9,10,11,12,13,14,15,16,17].reduce((acc, i) => acc + num(sumRow[i]), 0);
+                appState.charts.overStok = new Chart(document.getElementById('chartOverviewStok'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Guna', 'Baki', 'Bazir'],
+                        datasets: [{
+                            data: [guna, num(sumRow[STOK_COL.BAKI]), num(sumRow[STOK_COL.BAZIR])],
+                            backgroundColor: ['#ef4444', '#10b981', '#f59e0b']
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            }
         }
 
+        // ==========================================
         // VIEW: STOK
+        // ==========================================
         function renderStokView() {
             const data26 = appState.stokData[2026];
-            // Identify total row (usually the one with "JUMLAH" in district/name field)
-            // Based on previous code, total is at index where "BIL" is 12 or name is JUMLAH
-            const totalObj = data26.find(row => row['BIL'] === '12' || row['NAMA DAERAH'] === 'JUMLAH');
-            
-            if(!totalObj) return;
+            const t26 = data26.find(r => (r[STOK_COL.DAERAH] || '').trim() === 'JUMLAH');
+            if(!t26) return;
 
-            const html = `
+            const guna = [6,7,8,9,10,11,12,13,14,15,16,17].reduce((acc, i) => acc + num(t26[i]), 0);
+
+            document.getElementById('stok-stats').innerHTML = `
                 <div class="stat-card">
-                    <div class="stat-icon" style="background: #eef2ff; color: #4f46e5;"><i data-lucide="package"></i></div>
-                    <div>
-                        <div class="stat-label">Jumlah Stok 2026</div>
-                        <div class="stat-value">${fmt(totalObj['JUMLAH STOK'])}</div>
-                    </div>
+                    <div class="stat-icon" style="background: #eef2ff; color: #1e40af;"><i data-lucide="package"></i></div>
+                    <div><div class="stat-label">Jumlah Stok 2026</div><div class="stat-value">${fmt(t26[STOK_COL.JUM_STOK])}</div></div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon" style="background: #fff1f2; color: #e11d48;"><i data-lucide="trending-up"></i></div>
-                    <div>
-                        <div class="stat-label">Penggunaan Terkumpul</div>
-                        <div class="stat-value">${fmt(totalObj['JUMLAH PENGGUNAAN'])}</div>
-                    </div>
+                    <div><div class="stat-label">Penggunaan 2026</div><div class="stat-value">${fmt(guna)}</div></div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon" style="background: #ecfdf5; color: #10b981;"><i data-lucide="activity"></i></div>
-                    <div>
-                        <div class="stat-label">Baki Semasa</div>
-                        <div class="stat-value" style="color: #10b981;">${fmt(totalObj['BAKI STOK BIASA'])}</div>
-                    </div>
+                    <div><div class="stat-label">Baki Semasa</div><div class="stat-value" style="color:#10b981;">${fmt(t26[STOK_COL.BAKI])}</div></div>
                 </div>
             `;
-            document.getElementById('stok-stats').innerHTML = html;
             lucide.createIcons();
-
-            // Render Charts & Table (Integration of previous logic)
             renderStokTrends();
             renderDistrictStokTable();
         }
@@ -566,14 +571,12 @@
         function renderStokTrends() {
             const ctx = document.getElementById('chartTrend').getContext('2d');
             const months = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogo','Sep','Okt','Nov','Dis'];
-            
-            const findMonthlyData = (year) => {
-                const row = appState.stokData[year].find(r => r['BIL'] === '12' || r['NAMA DAERAH'] === 'JUMLAH');
-                return months.map(m => num(row[m.toUpperCase()]));
+            const getM = (year) => {
+                const t = appState.stokData[year].find(r => (r[STOK_COL.DAERAH] || '').trim() === 'JUMLAH');
+                return months.map((m, i) => t ? num(t[STOK_COL.JAN + i]) : 0);
             };
-
-            const data25 = findMonthlyData(2025);
-            const data26 = findMonthlyData(2026);
+            const d25 = getM(2025);
+            const d26 = getM(2026).map((v, i) => (v === 0 && i > 2) ? null : v);
 
             if(appState.charts.trend) appState.charts.trend.destroy();
             appState.charts.trend = new Chart(ctx, {
@@ -581,204 +584,121 @@
                 data: {
                     labels: months,
                     datasets: [
-                        { label: '2025', data: data25, borderColor: '#94a3b8', tension: 0.4, borderDash: [5,5] },
-                        { label: '2026', data: data26, borderColor: '#1e40af', tension: 0.4, borderWidth: 3 }
+                        { label: '2025', data: d25, borderColor: '#94a3b8', tension: 0.4, borderDash: [5,5] },
+                        { label: '2026', data: d26, borderColor: '#1e40af', tension: 0.4, borderWidth: 3 }
                     ]
                 },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom' } },
-                    scales: { y: { beginAtZero: true } }
-                }
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
             });
         }
 
         function renderDistrictStokTable() {
-            const data26 = appState.stokData[2026];
-            const districts = data26.filter(r => num(r['BIL']) >= 1 && num(r['BIL']) <= 11);
-            
-            let html = `<table><thead><tr>
-                <th>Daerah</th><th>C/F 2025</th><th>Terima</th><th>Jumlah</th><th>Guna</th><th>Baki</th><th>Bazir</th>
-            </tr></thead><tbody>`;
-
+            const districts = appState.stokData[2026].filter(r => num(r[STOK_COL.BIL]) >= 1 && num(r[STOK_COL.BIL]) <= 11);
+            let h = `<table><thead><tr><th>Daerah</th><th>C/F 2025</th><th>Terima</th><th>Jumlah</th><th>Guna</th><th>Baki</th><th>Bazir</th></tr></thead><tbody>`;
             districts.forEach(d => {
-                html += `<tr>
-                    <td><strong>${d['NAMA DAERAH']}</strong></td>
-                    <td style="color: var(--text-muted)">${fmt(d['C/F DARI TAHUN 2025'])}</td>
-                    <td>${fmt(d['JUMLAH TERIMA DARI JKN'])}</td>
-                    <td style="font-weight:700">${fmt(d['JUMLAH STOK'])}</td>
-                    <td style="color: #ef4444; font-weight:700">${fmt(d['JUMLAH PENGGUNAAN'])}</td>
-                    <td style="color: #10b981; font-weight:700">${fmt(d['BAKI STOK BIASA'])}</td>
-                    <td>${fmt(d['JUMLAH BAZIR/ROSAK'])}</td>
-                </tr>`;
+                const guna = [6,7,8,9,10,11,12,13,14,15,16,17].reduce((acc, i) => acc + num(d[i]), 0);
+                h += `<tr><td><strong>${d[STOK_COL.DAERAH]}</strong></td><td class="num">${fmt(d[STOK_COL.CF])}</td><td class="num">${fmt(d[STOK_COL.TERIMA])}</td><td class="num" style="font-weight:700">${fmt(d[STOK_COL.JUM_STOK])}</td><td class="num" style="color:#ef4444">${fmt(guna)}</td><td class="num" style="color:#10b981;font-weight:700">${fmt(d[STOK_COL.BAKI])}</td><td class="num">${fmt(d[STOK_COL.BAZIR])}</td></tr>`;
             });
-            html += `</tbody></table>`;
-            document.getElementById('stok-table-wrapper').innerHTML = html;
+            document.getElementById('stok-table-wrapper').innerHTML = h + `</tbody></table>`;
         }
 
+        // ==========================================
         // VIEW: DATABASE
+        // ==========================================
         function populateFilters() {
-            const pkds = [...new Set(appState.databaseRaw.map(r => r['NAMA PKD']))].filter(Boolean);
-            const select = document.getElementById('filterDaerah');
-            pkds.sort().forEach(pkd => {
-                const opt = document.createElement('option');
-                opt.value = pkd; opt.innerText = pkd;
-                select.appendChild(opt);
-            });
+            // PKD Filter for Database
+            const pkds = [...new Set(appState.databaseRaw.map(r => r[DB_COL.PKD]))].filter(Boolean).sort();
+            const slct = document.getElementById('filterDaerah');
+            slct.innerHTML = '<option value="">Semua Daerah</option>';
+            pkds.forEach(p => slct.innerHTML += `<option value="${p}">${p}</option>`);
+
+            // Month Filter for Reports
+            const months = [...new Set(appState.databaseRaw.map(r => r[DB_COL.BULAN]))].filter(Boolean);
+            const mSlct = document.getElementById('filterMonthReport');
+            mSlct.innerHTML = '<option value="">Semua Bulan (Terkumpul)</option>';
+            // Sort months logically if possible, otherwise alphabetical
+            months.sort().forEach(m => mSlct.innerHTML += `<option value="${m}">${m}</option>`);
         }
 
         function filterDatabase() {
-            const query = document.getElementById('dbSearch').value.toLowerCase();
-            const pkdFilter = document.getElementById('filterDaerah').value;
-
+            const q = document.getElementById('dbSearch').value.toLowerCase();
+            const f = document.getElementById('filterDaerah').value;
             appState.databaseFiltered = appState.databaseRaw.filter(r => {
-                const matchesSearch = !query || 
-                    (r['NAMA'] || '').toLowerCase().includes(query) || 
-                    (r['NO K/P'] || '').includes(query) || 
-                    (r['NAMA KK'] || '').toLowerCase().includes(query);
-                
-                const matchesPKD = !pkdFilter || r['NAMA PKD'] === pkdFilter;
-
-                return matchesSearch && matchesPKD;
+                const txt = `${r[DB_COL.NAMA]} ${r[DB_COL.KP]} ${r[DB_COL.KK]}`.toLowerCase();
+                return (!q || txt.includes(q)) && (!f || r[DB_COL.PKD] === f);
             });
-
             appState.currentPage = 1;
             renderDatabaseTable();
         }
 
         function renderDatabaseTable() {
-            const start = (appState.currentPage - 1) * appState.pageSize;
-            const pageData = appState.databaseFiltered.slice(start, start + appState.pageSize);
-            
-            let html = `<table><thead><tr>
-                <th>No</th><th>Bulan</th><th>Klinik</th><th>Nama Pesakit</th><th>No K/P</th><th>Umur</th><th>Kategori</th><th>Keputusan</th>
-            </tr></thead><tbody>`;
-
-            pageData.forEach((r, idx) => {
-                const cat = getCategory(r);
-                const res = (r['NEGATIF IFOBT (LAB)'] === 'YA' || r['NEGATIF (SELF)'] === 'YA') ? 'NEG' : 
-                          (r['POSITIF IFOBT (LAB)'] === 'YA' || r['POSITIF (SELF)'] === 'YA') ? 'POS' : '-';
-                
-                html += `<tr>
-                    <td>${start + idx + 1}</td>
-                    <td>${r['BULAN RETEN']}</td>
-                    <td><small>${r['NAMA PKD']}</small><br>${r['NAMA KK']}</td>
-                    <td><div style="font-weight:600">${r['NAMA']}</div></td>
-                    <td class="num">${r['NO K/P']}</td>
-                    <td class="num">${r['UMUR']}</td>
-                    <td><span class="badge" style="background:#f1f5f9">${cat}</span></td>
-                    <td><span class="badge badge-${res === 'POS' ? 'positive' : 'negative'}">${res}</span></td>
-                </tr>`;
+            const s = (appState.currentPage - 1) * appState.pageSize;
+            const pData = appState.databaseFiltered.slice(s, s + appState.pageSize);
+            let h = `<table><thead><tr><th>No</th><th>Bulan</th><th>Klinik</th><th>Nama Pesakit</th><th>No K/P</th><th>Umur</th><th>Kategori</th><th>Status</th></tr></thead><tbody>`;
+            pData.forEach((r, i) => {
+                const cat = (r[DB_COL.GEJALA] === 'YA') ? 'Gejala' : (r[DB_COL.RISIKO] === 'YA' ? 'Risiko' : 'Primer');
+                const isPos = r[DB_COL.POS_LAB] === 'YA' || r[DB_COL.POS_SELF] === 'YA';
+                h += `<tr><td>${s + i + 1}</td><td>${r[DB_COL.BULAN]}</td><td><small>${r[DB_COL.PKD]}</small><br>${r[DB_COL.KK]}</td><td><strong>${r[DB_COL.NAMA]}</strong></td><td>${r[DB_COL.KP]}</td><td>${r[DB_COL.UMUR]}</td><td><span class="badge">${cat}</span></td><td><span class="badge badge-${isPos?'positive':'negative'}">${isPos?'POS':'NEG'}</span></td></tr>`;
             });
-
-            html += `</tbody></table>`;
-            document.getElementById('db-table-wrapper').innerHTML = html;
-            document.getElementById('pageInfo').innerText = `Menunjukkan ${start+1} - ${Math.min(start + appState.pageSize, appState.databaseFiltered.length)} daripada ${appState.databaseFiltered.length} rekod`;
+            document.getElementById('db-table-wrapper').innerHTML = h + `</tbody></table>`;
+            document.getElementById('pageInfo').innerText = `Menunjukkan ${s+1}-${Math.min(s+appState.pageSize, appState.databaseFiltered.length)} daripada ${appState.databaseFiltered.length}`;
         }
 
-        function changePage(delta) {
-            const maxPage = Math.ceil(appState.databaseFiltered.length / appState.pageSize);
-            appState.currentPage = Math.max(1, Math.min(appState.currentPage + delta, maxPage));
+        function changePage(d) {
+            const max = Math.ceil(appState.databaseFiltered.length / appState.pageSize);
+            appState.currentPage = Math.max(1, Math.min(appState.currentPage + d, max));
             renderDatabaseTable();
         }
 
-        function getCategory(r) {
-            if(r['BERGEJALA '] === 'YA') return 'Gejala';
-            if(r['BERISIKO'] === 'YA') return 'Risiko';
-            return 'Primer (iFOBT)';
-        }
-
+        // ==========================================
         // VIEW: LAPORAN (RETEN)
-        function switchReten(type) {
-            appState.activeReten = type;
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelector(`.tab-btn[onclick="switchReten('${type}')"]`).classList.add('active');
+        // ==========================================
+        function switchReten(t) {
+            appState.activeReten = t;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector(`.tab-btn[onclick="switchReten('${t}')"]`).classList.add('active');
             renderRetenView();
         }
 
         function renderRetenView() {
-            const type = appState.activeReten;
-            let filtered = [];
-            let title = "";
+            const t = appState.activeReten;
+            const mFilter = document.getElementById('filterMonthReport').value;
+            let db = appState.databaseRaw;
+            
+            // Filter by month if selected
+            if(mFilter) db = db.filter(r => r[DB_COL.BULAN] === mFilter);
 
-            if(type === '4a') {
-                filtered = appState.databaseRaw.filter(r => !r['BERGEJALA '] && !r['BERISIKO'] && num(r['UMUR']) >= 50 && num(r['UMUR']) <= 75);
-                title = "Laporan Saringan Kolorektal iFOBT (Asimtomatik 50-75)";
-            } else if(type === '4b') {
-                filtered = appState.databaseRaw.filter(r => r['BERGEJALA '] === 'YA');
-                title = "Laporan Kes Bergejala (Symptomatic)";
-            } else {
-                filtered = appState.databaseRaw.filter(r => r['BERISIKO'] === 'YA');
-                title = "Laporan Kumpulan Berisiko Tinggi (Family History)";
-            }
+            let filtered = (t === '4a') ? db.filter(r => r[DB_COL.GEJALA] !== 'YA' && r[DB_COL.RISIKO] !== 'YA' && num(r[DB_COL.UMUR]) >= 50 && num(r[DB_COL.UMUR]) <= 75) :
+                           (t === '4b') ? db.filter(r => r[DB_COL.GEJALA] === 'YA') : db.filter(r => r[DB_COL.RISIKO] === 'YA');
 
-            // Summarize by PKD
-            const summary = {};
+            const sum = {};
             filtered.forEach(r => {
-                const pkd = r['NAMA PKD'] || 'TIADA PKD';
-                if(!summary[pkd]) summary[pkd] = { total: 0, pos: 0, neg: 0, scoped: 0 };
-                summary[pkd].total++;
-                if(r['POSITIF IFOBT (LAB)'] === 'YA' || r['POSITIF (SELF)'] === 'YA') summary[pkd].pos++;
-                if(r['NEGATIF IFOBT (LAB)'] === 'YA' || r['NEGATIF (SELF)'] === 'YA') summary[pkd].neg++;
-                if(r['KOLONOSKOPI (HADIR/ TIDAK PERLU/ CICIR/ REFUSED/ BELUM DIJALANKAN )'] === 'HADIR') summary[pkd].scoped++;
+                const p = (r[DB_COL.PKD] || 'TIADA').trim();
+                if(!sum[p]) sum[p] = { total: 0, pos: 0, neg: 0, scope: 0 };
+                sum[p].total++;
+                if(r[DB_COL.POS_LAB] === 'YA' || r[DB_COL.POS_SELF] === 'YA') sum[p].pos++;
+                if(r[DB_COL.NEG_LAB] === 'YA' || r[DB_COL.NEG_SELF] === 'YA') sum[p].neg++;
+                if((r[DB_COL.SCOPE] || '').includes('HADIR')) sum[p].scope++;
             });
 
-            let html = `<div style="padding-bottom: 20px; border-bottom: 1px solid var(--border); margin-bottom: 20px;">
-                <h3 style="font-size: 1rem;">${title}</h3>
-                <p style="font-size: 0.8rem; color: var(--text-muted);">Data dikira secara automatik berdasarkan pangkalan data semasa.</p>
-            </div>
-            <table><thead><tr>
-                <th>Daerah (PKD)</th><th>Jumlah Didata</th><th>iFOBT Positif</th><th>iFOBT Negatif</th><th>Kadar Positif (%)</th><th>Selesai Scope</th>
-            </tr></thead><tbody>`;
-
-            Object.keys(summary).sort().forEach(pkd => {
-                const s = summary[pkd];
-                const rate = ((s.pos / s.total) * 100).toFixed(1);
-                html += `<tr>
-                    <td><strong>${pkd}</strong></td>
-                    <td class="num">${s.total}</td>
-                    <td class="num" style="color: #ef4444">${s.pos}</td>
-                    <td class="num" style="color: #10b981">${s.neg}</td>
-                    <td class="num">${rate}%</td>
-                    <td class="num">${s.scoped}</td>
-                </tr>`;
+            let h = `<table><thead><tr><th>PKD</th><th>Jumlah</th><th>Positif</th><th>Negatif</th><th>Positiviti (%)</th><th>Scope</th></tr></thead><tbody>`;
+            Object.keys(sum).sort().forEach(p => {
+                const s = sum[p];
+                h += `<tr><td><strong>${p}</strong></td><td>${s.total}</td><td style="color:#ef4444">${s.pos}</td><td style="color:#10b981">${s.neg}</td><td>${s.total?((s.pos/s.total)*100).toFixed(1):0}%</td><td>${s.scope}</td></tr>`;
             });
-
-            html += `</tbody></table>`;
-            document.getElementById('reten-content').innerHTML = html;
+            document.getElementById('reten-content').innerHTML = h + `</tbody></table>`;
         }
 
-        // PDF EXPORT
         function exportToPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF('p', 'mm', 'a4');
-            const type = appState.activeReten;
-            
-            // Header
-            doc.setFontSize(14);
-            doc.text("KEMENTERIAN KESIHATAN MALAYSIA", 105, 15, { align: 'center' });
-            doc.setFontSize(12);
-            doc.text("Laporan Reten 4(" + type.slice(-1) + ") - Saringan Kanser Kolorektal Kedah 2026", 105, 22, { align: 'center' });
-            
-            doc.autoTable({
-                html: '#reten-content table',
-                startY: 30,
-                theme: 'grid',
-                styles: { fontSize: 8, cellPadding: 3 },
-                headStyles: { fillColor: [30, 64, 175] }
-            });
-            
-            doc.save(`Laporan_Reten_4${type}_Kedah.pdf`);
+            doc.text("Laporan Reten 4(" + appState.activeReten.slice(-1) + ") - Kedah 2026", 105, 15, { align:'center'});
+            doc.autoTable({ html: '#reten-content table', startY: 25, headStyles: { fillColor: [30,64,175] } });
+            doc.save(`Laporan_Reten_4${appState.activeReten}.pdf`);
         }
 
-        // HELPERS
-        function num(v) { 
-            if(!v) return 0;
-            const n = parseFloat(String(v).replace(/[^0-9.\-]/g, ''));
-            return isNaN(n) ? 0 : n;
-        }
+        function num(v) { return v ? parseFloat(String(v).split(',').join('').replace(/[^0-9.\-]/g, '')) || 0 : 0; }
         function fmt(v) { return num(v).toLocaleString('ms-MY'); }
-
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
