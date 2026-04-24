@@ -527,7 +527,7 @@
                         </div>
                         <div style="margin-bottom: 15px;">
                             <label style="display:block; font-size: 0.8rem; font-weight:700; margin-bottom:5px;">GAS Update Web App URL</label>
-                            <input type="text" id="setUpdateUrl" class="btn btn-outline" style="width:100%; text-align:left;" placeholder="https://script.google.com/macros/s/AKfycbyrc_0IIRzoOKW7eyZqvzC-pr_yuSjtUE70ybeztM8i14-xqoqhmODEU5gFxT99f07H/exe">
+                            <input type="text" id="setUpdateUrl" class="btn btn-outline" style="width:100%; text-align:left;" placeholder="Masukkan URL di sini...">
                         </div>
                     </div>
 
@@ -695,6 +695,7 @@
             } catch (error) {
                 console.error("Initialization Failed:", error);
                 alert("Ralat memuatkan data. Sila pastikan spreadsheet dikongsi secara awam ('Anyone with link can view').");
+                document.getElementById('loader').classList.add('hidden');
             }
         }
 
@@ -877,7 +878,6 @@
                 `;
             }).join('');
             document.getElementById('detection-details').innerHTML = findingsHtml || '<p style="color:var(--text-muted); font-size:0.8rem;">Tiada data kolonoskopi.</p>';
-        }
         }
 
         // ==========================================
@@ -1085,7 +1085,7 @@
             const pass = prompt("Sila masukkan Kata Laluan Kemaskini:");
             if(pass !== updPass) { alert("Kata laluan salah!"); return; }
 
-            const url = localStorage.getItem('crc_update_url');
+            const url = localStorage.getItem('crc_update_url') || 'https://script.google.com/macros/s/AKfycbyrc_0IIRzoOKW7eyZqvzC-pr_yuSjtUE70ybeztM8i14-xqoqhmODEU5gFxT99f07H/exec';
             if(!url) { alert("Ralat: Sila tetapkan URL Web App GAS di halaman Tetapan."); return; }
 
             const inputs = document.querySelectorAll('.edit-input');
@@ -1198,7 +1198,7 @@
             document.getElementById('setAdminPass').value = localStorage.getItem('crc_admin_pass') || 'admin123';
             document.getElementById('setUserPass').value = localStorage.getItem('crc_user_pass') || 'user123';
             document.getElementById('setUpdatePass').value = localStorage.getItem('crc_update_pass') || 'update2026';
-            document.getElementById('setUpdateUrl').value = localStorage.getItem('crc_update_url') || '';
+            document.getElementById('setUpdateUrl').value = localStorage.getItem('crc_update_url') || 'https://script.google.com/macros/s/AKfycbyrc_0IIRzoOKW7eyZqvzC-pr_yuSjtUE70ybeztM8i14-xqoqhmODEU5gFxT99f07H/exec';
         }
 
         function renderSettings() {
