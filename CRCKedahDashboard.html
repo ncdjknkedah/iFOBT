@@ -803,14 +803,22 @@
             document.getElementById('over-pos-meta').innerHTML = `Bil: ${posLab}/${resScreen.length}`;
 
             // 3. Rujukan & Uptake
+            const totalPosiFOBT = db.filter(r => (r[18] || '').toUpperCase() === 'YA' || (r[21] || '').toUpperCase() === 'YA').length;
             const rujukGastro = db.filter(r => (r[23] || '').toUpperCase() === 'YA').length;
-            document.getElementById('over-ref-val').innerText = fmt(rujukGastro);
-            document.getElementById('over-ref-meta').innerText = `Jumlah Rujukan Gastro`;
+            
+            // Denominator: Positif iFOBT + Bergejala + Berisiko
+            const denoReferral = totalPosiFOBT + scrBergejala + scrBerisiko;
+            const refRate = denoReferral > 0 ? ((rujukGastro/denoReferral)*100).toFixed(1) : "0";
 
+            document.getElementById('over-ref-val').innerText = fmt(rujukGastro);
+            document.getElementById('over-ref-meta').innerHTML = `Kadar: <strong>${refRate}%</strong> (${rujukGastro}/${denoReferral} Dikehendaki Rujuk)`;
+
+            const tcaHadir = db.filter(r => (r[25] || '').toUpperCase().includes('HADIR')).length;
             const colHadir = db.filter(r => (r[DB_COL.SCOPE] || '').toUpperCase().includes('HADIR')).length;
-            const colRate = rujukGastro > 0 ? ((colHadir/rujukGastro)*100).toFixed(1) : "0";
+            const uptakeRate = tcaHadir > 0 ? ((colHadir/tcaHadir)*100).toFixed(1) : "0";
+            
             document.getElementById('over-col-val').innerText = fmt(colHadir);
-            document.getElementById('over-col-meta').innerText = `Hadir: ${colHadir} (${colRate}%)`;
+            document.getElementById('over-col-meta').innerHTML = `Uptake: <strong>${uptakeRate}%</strong> (Hadir scope vs Hadir TCA: ${fmt(tcaHadir)})`;
 
             // Charts
             const totalScr = totalOverall || 1;
