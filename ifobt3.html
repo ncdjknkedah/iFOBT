@@ -615,23 +615,25 @@
                 let cacheUsed = false;
 
                 rawData = rawData.map(row => {
-                    const ic = row[6]; // Index 6 is IC
-                    if (cache[ic]) {
-                        const cachedData = cache[ic];
+                    const ic = (row[6] || "").trim();
+                    const nama = (row[5] || "").trim();
+                    const cacheKey = ic + "_" + nama; // Combined key to prevent contamination
+
+                    if (cache[cacheKey]) {
+                        const cachedData = cache[cacheKey];
                         let isDifferent = false;
                         
-                        // Check if Excel data is still "old"
                         for (let colName in cachedData) {
                             const idx = DB_LABELS.indexOf(colName);
+                            // Only apply if indices match and data is actually different
                             if (idx !== -1 && cachedData[colName] !== row[idx]) {
                                 row[idx] = cachedData[colName];
                                 isDifferent = true;
                             }
                         }
 
-                        // If CSV finally matches our update, remove from cache
                         if (!isDifferent) {
-                            delete cleanCache[ic];
+                            delete cleanCache[cacheKey];
                             cacheUsed = true;
                         }
                     }
@@ -1056,9 +1058,10 @@
             const params = new URLSearchParams(updates).toString();
             const fullUrl = `${url}?${params}`;
             
-            // 1. Tambah ke Cache Lokal Terus (Survive refresh)
+            // 1. Tambah ke Cache Lokal dengan Kunci Unik (IC + Nama)
             const cache = JSON.parse(localStorage.getItem('crc_pending_updates') || '{}');
-            cache[updates.ic] = updates;
+            const cacheKey = updates.ic + "_" + row[5]; 
+            cache[cacheKey] = updates;
             localStorage.setItem('crc_pending_updates', JSON.stringify(cache));
 
             // 2. Update Memori Sistem Terus
@@ -1072,11 +1075,11 @@
             // 3. Hantar ke Google Sheet secara Latar Belakang (Fast Beacon)
             const img = new Image();
             img.onload = img.onerror = function() {
-                console.log("Update sent successfully.");
+                console.log("Update sent.");
             };
             img.src = fullUrl;
 
-            alert("✅ BERISYEM! Maklumat telah dikemaskini.");
+            alert("✅ BERJAYA! Maklumat pesakit telah dikemaskini.");
             closeModal();
             btn.disabled = false;
             btn.innerHTML = oldText;
