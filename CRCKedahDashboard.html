@@ -306,44 +306,50 @@
                     </div>
                 </div>
 
-                <div class="stats-grid">
-                    <!-- Row 1: Overall Summary -->
-                    <div class="stat-card" style="border-left: 5px solid #64748b;">
-                        <div style="flex:1">
-                            <div class="stat-label">Jumlah Saringan Keseluruhan</div>
-                            <div class="stat-value" id="over-total-val">0</div>
-                            <div style="font-size: 0.7rem; color: var(--text-muted);">Keseluruhan Database</div>
+                <!-- Row 1: Summary & Main Category Chart -->
+                <div style="display: flex; flex-wrap: wrap; gap: 24px; margin-bottom: 32px;">
+                    <!-- 2x2 Scorecards Container -->
+                    <div style="flex: 1; min-width: 320px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div class="stat-card" style="border-left: 5px solid #64748b; padding: 15px;">
+                            <div style="flex:1">
+                                <div class="stat-label">Saringan Keseluruhan</div>
+                                <div class="stat-value" style="font-size: 1.4rem;" id="over-total-val">0</div>
+                                <div style="font-size: 0.65rem; color: var(--text-muted);">Keseluruhan Database</div>
+                            </div>
+                        </div>
+                        <div class="stat-card" style="border-left: 5px solid #3b82f6; padding: 15px;">
+                            <div style="flex:1">
+                                <div class="stat-label">Saringan Asimtomatik</div>
+                                <div class="stat-value" style="font-size: 1.4rem;" id="over-asim-val">0</div>
+                                <div id="over-asim-meta" style="font-size: 0.65rem; color: var(--text-muted);">Scr 1 + Scr 2</div>
+                            </div>
+                        </div>
+                        <div class="stat-card" style="border-left: 5px solid #f59e0b; padding: 15px;">
+                            <div style="flex:1">
+                                <div class="stat-label">Saringan Berisiko</div>
+                                <div class="stat-value" style="font-size: 1.4rem;" id="over-risk-val">0</div>
+                                <div id="over-risk-meta" style="font-size: 0.65rem; color: var(--text-muted);">Kriteria Risiko</div>
+                            </div>
+                        </div>
+                        <div class="stat-card" style="border-left: 5px solid #ef4444; padding: 15px;">
+                            <div style="flex:1">
+                                <div class="stat-label">Saringan Bergejala</div>
+                                <div class="stat-value" style="font-size: 1.4rem;" id="over-symp-val">0</div>
+                                <div id="over-symp-meta" style="font-size: 0.65rem; color: var(--text-muted);">Mempunyai Gejala</div>
+                            </div>
                         </div>
                     </div>
-                    <div class="stat-card" style="border-left: 5px solid #3b82f6;">
-                        <div style="flex:1">
-                            <div class="stat-label">Saringan Asimtomatik</div>
-                            <div class="stat-value" id="over-asim-val">0</div>
-                            <div id="over-asim-meta" style="font-size: 0.7rem; color: var(--text-muted);">Saringan 1 + Saringan 2</div>
-                        </div>
-                    </div>
-                    <div class="stat-card" style="border-left: 5px solid #f59e0b;">
-                        <div style="flex:1">
-                            <div class="stat-label">Saringan Berisiko Tinggi</div>
-                            <div class="stat-value" id="over-risk-val">0</div>
-                            <div id="over-risk-meta" style="font-size: 0.7rem; color: var(--text-muted);">Faktor Risiko Sahaja</div>
-                        </div>
-                    </div>
-                    <div class="stat-card" style="border-left: 5px solid #ef4444;">
-                        <div style="flex:1">
-                            <div class="stat-label">Saringan Bergejala</div>
-                            <div class="stat-value" id="over-symp-val">0</div>
-                            <div id="over-symp-meta" style="font-size: 0.7rem; color: var(--text-muted);">Mempunyai Gejala</div>
-                        </div>
+                    
+                    <!-- Main Bar Chart Container -->
+                    <div class="card" style="flex: 1.2; min-width: 320px; padding: 15px; margin-bottom: 0;">
+                        <h3 style="font-size: 0.85rem; margin-bottom: 10px;">📊 Taburan Kategori Saringan</h3>
+                        <p style="font-size: 0.65rem; color: var(--text-muted); margin-bottom:10px;">Bilangan kes mengikut kategori (Bil & %)</p>
+                        <div style="height: 180px;"><canvas id="chartOverviewCat"></canvas></div>
                     </div>
                 </div>
 
                 <div class="stats-grid">
-                    <!-- Row 2: Charts & Achievement -->
-                    <div class="card" style="grid-column: span 1; padding: 15px; margin-bottom:0;">
-                        <h3 style="font-size: 0.85rem; margin-bottom: 15px;">📊 Kategori Saringan Keseluruhan (%)</h3>
-                        <div style="height: 140px;"><canvas id="chartOverviewCat"></canvas></div>
-                    </div>
+                    <!-- Row 2: Achievement -->
                     <div class="stat-card" style="border-left: 5px solid var(--primary);">
                         <div style="flex:1">
                             <div class="stat-label">Pencapaian Saringan Pertama (New)</div>
@@ -356,6 +362,13 @@
                             <div class="stat-label">Pencapaian Saringan Kedua (Repeat)</div>
                             <div class="stat-value" id="over-scr2-val">0</div>
                             <div id="over-scr2-meta" style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;"></div>
+                        </div>
+                    </div>
+                    <div class="stat-card" style="border-left: 5px solid #06b6d4;">
+                        <div style="flex:1">
+                            <div class="stat-label">iFOBT Positiviti</div>
+                            <div class="stat-value" id="over-pos-rate">0%</div>
+                            <div id="over-pos-meta" style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;"></div>
                         </div>
                     </div>
                 </div>
@@ -836,14 +849,19 @@
                 },
                 options: { 
                     responsive: true, maintainAspectRatio: false,
+                    layout: { padding: { top: 30 } },
                     plugins: { 
                         legend: { display: false },
                         datalabels: {
-                            color: '#000', font: { weight: 'bold' }, anchor: 'end', align: 'top',
-                            formatter: (v) => `${((v/totalScr)*100).toFixed(1)}%`
+                            color: '#000', font: { weight: '700', size: 10 }, 
+                            anchor: 'end', align: 'top', offset: 4,
+                            formatter: (v) => `${fmt(v)}\n(${((v/totalScr)*100).toFixed(1)}%)`
                         }
                     },
-                    scales: { y: { display: false }, x: { grid: { display:false } } }
+                    scales: { 
+                        y: { display: false, suggestedMax: Math.max(...Object.values(catData)) * 1.2 }, 
+                        x: { grid: { display:false } } 
+                    }
                 }
             });
 
