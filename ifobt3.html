@@ -1053,33 +1053,33 @@
             btn.disabled = true; 
             btn.innerText = "Menghantar...";
 
-            // Teknik Pantas: Gunakan Image object untuk pintas CORS dan wait-time
             const params = new URLSearchParams(updates).toString();
-            try {
-                // Use fetch with standard mode to detect network errors better
-                await fetch(`${url}?${params}`, { mode: 'no-cors' });
-                
-                // 1. SAVE TO PERMANENT LOCAL CACHE (To survive refresh)
-                const cache = JSON.parse(localStorage.getItem('crc_pending_updates') || '{}');
-                cache[updates.ic] = updates; // Map by IC
-                localStorage.setItem('crc_pending_updates', JSON.stringify(cache));
+            const fullUrl = `${url}?${params}`;
+            
+            // 1. Tambah ke Cache Lokal Terus (Survive refresh)
+            const cache = JSON.parse(localStorage.getItem('crc_pending_updates') || '{}');
+            cache[updates.ic] = updates;
+            localStorage.setItem('crc_pending_updates', JSON.stringify(cache));
 
-                // 2. UPDATE CURRENT STATE
-                inputs.forEach(inp => {
-                    const colName = inp.getAttribute('data-col');
-                    const colIdx = DB_LABELS.indexOf(colName);
-                    if(colIdx !== -1) appState.databaseRaw[currentEditRowIndex][colIdx] = inp.value;
-                });
-                renderDatabaseTable();
+            // 2. Update Memori Sistem Terus
+            inputs.forEach(inp => {
+                const colName = inp.getAttribute('data-col');
+                const colIdx = DB_LABELS.indexOf(colName);
+                if(colIdx !== -1) appState.databaseRaw[currentEditRowIndex][colIdx] = inp.value;
+            });
+            renderDatabaseTable();
 
-                alert("✅ BERJAYA! Data telah dihantar ke Google Sheets dan dikemaskini pada paparan anda.");
-                closeModal();
-            } catch (e) {
-                alert("❌ RALAT: Gagal menghantar data. Sila pastikan internet anda stabil dan URL Web App betul. (Error: " + e + ")");
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = oldText;
-            }
+            // 3. Hantar ke Google Sheet secara Latar Belakang (Fast Beacon)
+            const img = new Image();
+            img.onload = img.onerror = function() {
+                console.log("Update sent successfully.");
+            };
+            img.src = fullUrl;
+
+            alert("✅ BERISYEM! Maklumat telah dikemaskini.");
+            closeModal();
+            btn.disabled = false;
+            btn.innerHTML = oldText;
         }
 
         function changePage(d) {
