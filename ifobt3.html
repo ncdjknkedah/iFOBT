@@ -267,39 +267,75 @@
                 <div class="header-top">
                     <div class="page-info">
                         <h1>🏠 Ringkasan Eksekutif</h1>
-                        <p>Status terkini program saringan kanser kolorektal Negeri Kedah</p>
+                        <p>Analisis pencapaian dan status program saringan CRC Kedah</p>
                     </div>
+                </div>
+
+                <div class="controls" style="margin-bottom: 30px;">
+                    <select id="overFilterPKD" class="btn btn-outline" onchange="renderOverview()">
+                        <option value="">Semua Daerah (Kedah)</option>
+                    </select>
+                    <select id="overFilterKK" class="btn btn-outline" onchange="renderOverview()">
+                        <option value="">Semua Klinik (KK)</option>
+                    </select>
                 </div>
 
                 <div class="stats-grid">
                     <div class="stat-card" style="border-left: 5px solid var(--primary);">
-                        <div>
-                            <div class="stat-label">Jumlah Saringan (2026)</div>
-                            <div class="stat-value" id="over-scr-total">-</div>
+                        <div style="flex:1">
+                            <div class="stat-label">Saringan Pertama (K.Baru)</div>
+                            <div class="stat-value" id="over-scr1-val">0</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;">Sasaran: <span id="over-scr1-target">9000</span> (<span id="over-scr1-pct">0%</span>)</div>
                         </div>
                     </div>
                     <div class="stat-card" style="border-left: 5px solid var(--secondary);">
-                        <div>
-                            <div class="stat-label">iFOBT Positif</div>
-                            <div class="stat-value" id="over-scr-pos">-</div>
+                        <div style="flex:1">
+                            <div class="stat-label">Saringan Kedua (Ulangan)</div>
+                            <div class="stat-value" id="over-scr2-val">0</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;">Sasaran: <span id="over-scr2-target">6218</span> (<span id="over-scr2-pct">0%</span>)</div>
                         </div>
                     </div>
-                    <div class="stat-card" style="border-left: 5px solid var(--accent);">
-                        <div>
-                            <div class="stat-label">Kadar Selesai Scope</div>
-                            <div class="stat-value" id="over-scr-scope">-</div>
+                    <div class="stat-card" style="border-left: 5px solid #f59e0b;">
+                        <div style="flex:1">
+                            <div class="stat-label">iFOBT Positiviti</div>
+                            <div class="stat-value" id="over-pos-rate">0%</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;">Kump. Asimtomatik</div>
+                        </div>
+                    </div>
+                    <div class="stat-card" style="border-left: 5px solid #ef4444;">
+                        <div style="flex:1">
+                            <div class="stat-label">Rujukan SOPD</div>
+                            <div class="stat-value" id="over-ref-val">0</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;">Kadar: <span id="over-ref-rate">0%</span></div>
                         </div>
                     </div>
                 </div>
 
-                <div class="grid" style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+                <div class="stats-grid" style="margin-top:-10px;">
+                    <div class="stat-card" style="border-left: 5px solid var(--accent);">
+                        <div style="flex:1">
+                            <div class="stat-label">Kolonoskop Selesai</div>
+                            <div class="stat-value" id="over-col-val">0</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;">Uptake: <span id="over-col-rate">0%</span> (dari Rujukan)</div>
+                        </div>
+                    </div>
+                    <div class="stat-card" style="border-left: 5px solid #6366f1;">
+                        <div style="flex:1">
+                            <div class="stat-label">Hasil Saringan (Findings)</div>
+                            <div class="stat-value" id="over-find-val">0</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;">Kanser/Polip/Lain-lain</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px;">
                     <div class="card">
-                        <h2 style="font-size: 1.1rem; margin-bottom: 20px;">📊 Saringan Mengikut Kategori</h2>
+                        <h2 style="font-size: 1.1rem; margin-bottom: 20px;">📊 Saringan Mengikut Kategori (%)</h2>
                         <div style="height: 300px;"><canvas id="chartOverviewCat"></canvas></div>
                     </div>
                     <div class="card">
-                        <h2 style="font-size: 1.1rem; margin-bottom: 20px;">🏥 Status Stok Semasa</h2>
-                        <div style="height: 300px;"><canvas id="chartOverviewStok"></canvas></div>
+                        <h2 style="font-size: 1.1rem; margin-bottom: 20px;">🔍 Analisis Hasil Kolonoskopi</h2>
+                        <div style="height: 300px;"><canvas id="chartOverviewResults"></canvas></div>
                     </div>
                 </div>
             </section>
@@ -426,7 +462,26 @@
             BIL: 0, BULAN: 1, PKD: 2, KK: 3, JENIS: 4, NAMA: 5, KP: 6, UMUR: 7, 
             GEJALA: 10, RISIKO: 13, 
             POS_LAB: 18, NEG_LAB: 19, POS_SELF: 21, NEG_SELF: 22, 
-            RUJUK_SOPD: 23, TCA_SOPD: 25, SCOPE: 26, SCOPE_RES: 28
+            RUJUK_SOPD: 23, TCA_SOPD: 25, SCOPE: 26, SCOPE_RES: 27, SCOPE_CAT: 28
+        };
+
+        const TARGETS_1 = {
+            "PKD. BALING": 600, "PKD. BANDAR BAHARU": 420, "PKD. KOTA SETAR": 1500, "PKD. KUALA MUDA": 1500,
+            "PKD. KULIM": 1260, "PKD. KUBANG PASU": 1260, "PKD. LANGKAWI": 600, "PKD. PADANG TERAP": 420,
+            "PKD. PENDANG": 600, "PKD. SIK": 420, "PKD. YAN": 420, "TOTAL": 9000
+        };
+        const TARGETS_2 = {
+            "PKD. BALING": 507, "PKD. BANDAR BAHARU": 228, "PKD. KOTA SETAR": 1224, "PKD. KUALA MUDA": 1415,
+            "PKD. KULIM": 657, "PKD. KUBANG PASU": 832, "PKD. LANGKAWI": 329, "PKD. PADANG TERAP": 303,
+            "PKD. PENDANG": 600, "PKD. SIK": 220, "PKD. YAN": 278, "TOTAL": 6218
+        };
+
+        // Normalize naming for mapping
+        const PKD_MAP = {
+            "PKD. B": "PKD. BALING", "PKD. BB": "PKD. BANDAR BAHARU", "PKD. KS": "PKD. KOTA SETAR",
+            "PKD. KM": "PKD. KUALA MUDA", "PKD. KP": "PKD. KULIM", "PKD. K": "PKD. KUBANG PASU",
+            "PKD. L": "PKD. LANGKAWI", "PKD. PT": "PKD. PADANG TERAP", "PKD. P": "PKD. PENDANG",
+            "PKD. S": "PKD. SIK", "PKD. Y": "PKD. YAN"
         };
 
         // GLOBAL APP STATE
@@ -499,56 +554,108 @@
         // ==========================================
         // VIEW: OVERVIEW
         // ==========================================
+        function updateOverviewKK() {
+            const pkdFilter = document.getElementById('overFilterPKD').value;
+            const kks = [...new Set(appState.databaseRaw.filter(r => !pkdFilter || r[DB_COL.PKD] === pkdFilter).map(r => r[DB_COL.KK]))].filter(Boolean).sort();
+            const slct = document.getElementById('overFilterKK');
+            slct.innerHTML = '<option value="">Semua Klinik (KK)</option>';
+            kks.forEach(k => slct.innerHTML += `<option value="${k}">${k}</option>`);
+        }
+
         function renderOverview() {
-            const db = appState.databaseRaw;
-            const stok26 = appState.stokData[2026];
-            const sumRow = stok26.find(r => (r[STOK_COL.DAERAH] || '').trim() === 'JUMLAH');
+            const pkdF = document.getElementById('overFilterPKD').value;
+            const kkF = document.getElementById('overFilterKK').value;
 
-            const totalScr = db.length;
-            const posScr = db.filter(r => r[DB_COL.POS_LAB] === 'YA' || r[DB_COL.POS_SELF] === 'YA').length;
-            const scoped = db.filter(r => (r[DB_COL.SCOPE] || '').includes('HADIR')).length;
-            
-            document.getElementById('over-scr-total').innerText = fmt(totalScr);
-            document.getElementById('over-scr-pos').innerText = fmt(posScr);
-            document.getElementById('over-scr-scope').innerText = posScr > 0 ? ((scoped/posScr)*100).toFixed(1) + "%" : "0%";
+            // Update KK filter if PKD changed
+            if (window.event && window.event.target && window.event.target.id === 'overFilterPKD') updateOverviewKK();
 
-            const catCounts = { 'Asimtomatik': 0, 'Gejala': 0, 'Risiko': 0 };
-            db.forEach(r => {
-                if(r[DB_COL.GEJALA] === 'YA') catCounts['Gejala']++;
-                else if(r[DB_COL.RISIKO] === 'YA') catCounts['Risiko']++;
-                else catCounts['Asimtomatik']++;
+            const db = appState.databaseRaw.filter(r => {
+                return (!pkdF || r[DB_COL.PKD] === pkdF) && (!kkF || r[DB_COL.KK] === kkF);
             });
+
+            // 1. Saringan Pertama (Kes Baru) vs Kedua (Ulangan)
+            const scr1 = db.filter(r => (r[DB_COL.JENIS] || '').toUpperCase().includes('BARU')).length;
+            const scr2 = db.filter(r => (r[DB_COL.JENIS] || '').toUpperCase().includes('ULANGAN')).length;
+            
+            const target1 = pkdF ? (TARGETS_1[pkdF] || 1) : TARGETS_1.TOTAL;
+            const target2 = pkdF ? (TARGETS_2[pkdF] || 1) : TARGETS_2.TOTAL;
+
+            document.getElementById('over-scr1-val').innerText = fmt(scr1);
+            document.getElementById('over-scr1-target').innerText = fmt(target1);
+            document.getElementById('over-scr1-pct').innerText = ((scr1/target1)*100).toFixed(1) + "%";
+            
+            document.getElementById('over-scr2-val').innerText = fmt(scr2);
+            document.getElementById('over-scr2-target').innerText = fmt(target2);
+            document.getElementById('over-scr2-pct').innerText = ((scr2/target2)*100).toFixed(1) + "%";
+
+            // 2. Positiviti Kump. Asimtomatik
+            const asym = db.filter(r => r[DB_COL.GEJALA] !== 'YA' && r[DB_COL.RISIKO] !== 'YA');
+            const posAsym = asym.filter(r => r[DB_COL.POS_LAB] === 'YA' || r[DB_COL.POS_SELF] === 'YA').length;
+            document.getElementById('over-pos-rate').innerText = asym.length > 0 ? ((posAsym/asym.length)*100).toFixed(1) + "%" : "0%";
+
+            // 3. Rujukan SOPD
+            const ref = db.filter(r => r[DB_COL.RUJUK_SOPD] === 'YA').length;
+            document.getElementById('over-ref-val').innerText = fmt(ref);
+            document.getElementById('over-ref-rate').innerText = db.length > 0 ? ((ref/db.length)*100).toFixed(1) + "%" : "0%";
+
+            // 4. Kolonoskopi Uptake
+            const colHadir = db.filter(r => (r[DB_COL.SCOPE] || '').toUpperCase().includes('HADIR')).length;
+            document.getElementById('over-col-val').innerText = fmt(colHadir);
+            document.getElementById('over-col-rate').innerText = ref > 0 ? ((colHadir/ref)*100).toFixed(1) + "%" : "0%";
+
+            // 5. Findings
+            const findings = db.filter(r => r[DB_COL.SCOPE_RES] && r[DB_COL.SCOPE_RES].trim() !== "").length;
+            document.getElementById('over-find-val').innerText = fmt(findings);
+
+            // Chart: Category %
+            const total = db.length || 1;
+            const catCounts = { 
+                'Asimtomatik': asym.length, 
+                'Gejala': db.filter(r => r[DB_COL.GEJALA] === 'YA').length, 
+                'Risiko': db.filter(r => r[DB_COL.RISIKO] === 'YA').length 
+            };
 
             if(appState.charts.overCat) appState.charts.overCat.destroy();
             appState.charts.overCat = new Chart(document.getElementById('chartOverviewCat'), {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(catCounts).map(k => `${k} (${((catCounts[k]/total)*100).toFixed(1)}%)`),
+                    datasets: [{
+                        data: Object.values(catCounts),
+                        backgroundColor: ['#1e40af', '#3b82f6', '#60a5fa']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+            });
+
+            // Chart: Outcomes (Findings)
+            const outcomes = {};
+            db.forEach(r => {
+                const res = (r[DB_COL.SCOPE_CAT] || '').trim();
+                if(res) outcomes[res] = (outcomes[res] || 0) + 1;
+            });
+            const outTotal = Object.values(outcomes).reduce((a, b) => a + b, 0) || 1;
+
+            if(appState.charts.overRes) appState.charts.overRes.destroy();
+            appState.charts.overRes = new Chart(document.getElementById('chartOverviewResults'), {
                 type: 'bar',
                 data: {
-                    labels: Object.keys(catCounts),
+                    labels: Object.keys(outcomes),
                     datasets: [{
-                        label: 'Bilangan Saringan',
-                        data: Object.values(catCounts),
-                        backgroundColor: ['#1e40af', '#3b82f6', '#60a5fa'],
+                        label: 'Bil. Kes',
+                        data: Object.values(outcomes),
+                        backgroundColor: '#1e40af',
                         borderRadius: 8
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false }
+                options: { 
+                    indexAxis: 'y',
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: false }
+                    }
+                }
             });
-
-            if(sumRow) {
-                if(appState.charts.overStok) appState.charts.overStok.destroy();
-                const guna = [6,7,8,9,10,11,12,13,14,15,16,17].reduce((acc, i) => acc + num(sumRow[i]), 0);
-                appState.charts.overStok = new Chart(document.getElementById('chartOverviewStok'), {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Guna', 'Baki', 'Bazir'],
-                        datasets: [{
-                            data: [guna, num(sumRow[STOK_COL.BAKI]), num(sumRow[STOK_COL.BAZIR])],
-                            backgroundColor: ['#ef4444', '#10b981', '#f59e0b']
-                        }]
-                    },
-                    options: { responsive: true, maintainAspectRatio: false }
-                });
-            }
         }
 
         // ==========================================
@@ -618,8 +725,15 @@
         // VIEW: DATABASE
         // ==========================================
         function populateFilters() {
-            // PKD Filter for Database
+            // PKD Filters
             const pkds = [...new Set(appState.databaseRaw.map(r => r[DB_COL.PKD]))].filter(Boolean).sort();
+            
+            // Overview PKD
+            const oPkd = document.getElementById('overFilterPKD');
+            oPkd.innerHTML = '<option value="">Semua Daerah (Kedah)</option>';
+            pkds.forEach(p => oPkd.innerHTML += `<option value="${p}">${p}</option>`);
+
+            // Database PKD
             const slct = document.getElementById('filterDaerah');
             slct.innerHTML = '<option value="">Semua Daerah (PKD)</option>';
             pkds.forEach(p => slct.innerHTML += `<option value="${p}">${p}</option>`);
