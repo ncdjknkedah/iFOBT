@@ -276,7 +276,10 @@
 
                 <div class="controls" style="margin-bottom: 20px; display: flex; flex-wrap: wrap; gap:15px; align-items: flex-end;">
                     <div style="flex: 1; min-width: 250px;">
-                        <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 5px;">Pilih Bulan (Multi-select)</label>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                            <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">Pilih Bulan (Multi-select)</label>
+                            <button class="btn" style="padding:2px 8px; font-size:0.65rem;" onclick="toggleAllMonths()">Semua/Tiada</button>
+                        </div>
                         <div id="overFilterMonthContainer" style="background: white; border: 1px solid var(--border); border-radius: 8px; padding: 10px; max-height: 100px; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 10px;">
                             <!-- Populated by JS -->
                         </div>
@@ -525,14 +528,28 @@
         };
 
         const TARGETS_DEFAULT_1 = {
-            "PKD. BALING": 600, "PKD. BANDAR BAHARU": 420, "PKD. KOTA SETAR": 1500, "PKD. KUALA MUDA": 1500,
-            "PKD. KULIM": 1260, "PKD. KUBANG PASU": 1260, "PKD. LANGKAWI": 600, "PKD. PADANG TERAP": 420,
-            "PKD. PENDANG": 600, "PKD. SIK": 420, "PKD. YAN": 420, "TOTAL": 9000
+            "BALING": 600, "BANDAR BAHARU": 420, "KOTA SETAR": 1500, "KUALA MUDA": 1500,
+            "KUBANG PASU": 1260, "KULIM": 1260, "LANGKAWI": 600, "PADANG TERAP": 420,
+            "PENDANG": 600, "SIK": 420, "YAN": 420, "TOTAL": 9000
         };
         const TARGETS_DEFAULT_2 = {
-            "PKD. BALING": 507, "PKD. BANDAR BAHARU": 228, "PKD. KOTA SETAR": 1224, "PKD. KUALA MUDA": 1415,
-            "PKD. KULIM": 657, "PKD. KUBANG PASU": 832, "PKD. LANGKAWI": 329, "PKD. PADANG TERAP": 303,
-            "PKD. PENDANG": 600, "PKD. SIK": 220, "PKD. YAN": 278, "TOTAL": 6218
+            "BALING": 507, "BANDAR BAHARU": 228, "KOTA SETAR": 1224, "KUALA MUDA": 1415,
+            "KUBANG PASU": 832, "KULIM": 657, "LANGKAWI": 329, "PADANG TERAP": 225,
+            "PENDANG": 303, "SIK": 220, "YAN": 278, "TOTAL": 6218
+        };
+
+        const PKD_ALIAS = {
+            "B": "BALING", "BAL": "BALING", "BALING": "BALING",
+            "BB": "BANDAR BAHARU", "NN": "BANDAR BAHARU", "BANDARBAHARU": "BANDAR BAHARU",
+            "KS": "KOTA SETAR", "KOTASETAR": "KOTA SETAR",
+            "KM": "KUALA MUDA", "KUALAMUDA": "KUALA MUDA",
+            "KP": "KUBANG PASU", "KUBANGPASU": "KUBANG PASU",
+            "K": "KULIM", "KULIM": "KULIM",
+            "L": "LANGKAWI", "LANGKAWI": "LANGKAWI",
+            "PT": "PADANG TERAP", "PADANGTERAP": "PADANG TERAP", "PADNAGTERAP": "PADANG TERAP",
+            "P": "PENDANG", "PENDANG": "PENDANG",
+            "S": "SIK", "SIK": "SIK",
+            "Y": "YAN", "YAN": "YAN"
         };
 
         // Normalize naming for mapping
@@ -657,19 +674,18 @@
             const scr1 = db.filter(r => (r[DB_COL.JENIS] || '').toUpperCase().includes('BARU')).length;
             const scr2 = db.filter(r => (r[DB_COL.JENIS] || '').toUpperCase().includes('ULANGAN')).length;
             
-            // Normalize mapping: Clean all dots and spaces to ensure match
+            // Normalize mapping: PKD targets keys 
             const getTargetValue = (obj, key) => {
-                const clean = (s) => String(s).replace(/[.\s]/g, '').toUpperCase();
-                const targetKey = clean(key);
-                for (let k in obj) {
-                    if (clean(k) === targetKey) return obj[k];
-                }
-                return 0;
+                if (!key) return obj.TOTAL || 1;
+                // Strip "PKD", dots, and spaces
+                let s = String(key).toUpperCase().replace(/PKD|PK/g, '').replace(/[.\s]/g, '');
+                const resolved = PKD_ALIAS[s] || s;
+                return obj[resolved] || 0;
             };
 
-            const t1_raw = pkdF ? getTargetValue(TARGETS_1, pkdF) : TARGETS_1.TOTAL;
-            const t2_raw = pkdF ? getTargetValue(TARGETS_2, pkdF) : TARGETS_2.TOTAL;
-            const target1 = t1_raw || 1; // Fallback to 1 ONLY if target is 0 or missing
+            const t1_raw = getTargetValue(TARGETS_1, pkdF);
+            const t2_raw = getTargetValue(TARGETS_2, pkdF);
+            const target1 = t1_raw || 1; 
             const target2 = t2_raw || 1;
 
             document.getElementById('over-scr1-val').innerText = fmt(scr1);
@@ -1037,6 +1053,13 @@
             localStorage.setItem('crc_user_pass', document.getElementById('setUserPass').value);
 
             alert("Tetapan berjaya disimpan!");
+            renderOverview();
+        }
+
+        function toggleAllMonths() {
+            const boxes = document.querySelectorAll('.month-cb');
+            const allChecked = Array.from(boxes).every(b => b.checked);
+            boxes.forEach(b => b.checked = !allChecked);
             renderOverview();
         }
 
