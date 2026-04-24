@@ -950,9 +950,16 @@
         const DB_LABELS = [
             "BIL", "BULAN RETEN", "NAMA PKD", "NAMA KK", "KES BARU/ ULANGAN", "NAMA", "NO K/P", "UMUR", "ALAMAT", "NO TEL",
             "BERGEJALA", "BERGEJALA (RUJUK)", "BERGEJALA (ENGGAN RUJUK)", "BERISIKO", "BERISIKO (RUJUK)", "BERISIKO (ENGGAN RUJUK)",
-            "TARIKH BERI BOTOL", "TARIKH IFOBT / HANTAR", "POSITIF LAB", "NEGATIF LAB", "TARIKH SELF", "POSITIF SELF", "NEGATIF SELF",
-            "RUJUK SOPD (IFOBT)", "ENGGAN RUJUK (IFOBT)", "TCA SOPD", "KOLONOSKOPI", "KEPUTUSAN", "KATEGORI SCOPE", "HPE", 
-            "STAGING", "CATATAN", "BWN"
+            "TARIKH BERI BOTOL SPESIMEN IFOBT", "TARIKH IFOBT / HANTAR SPESIMEN", "POSITIF IFOBT (LAB)", "NEGATIF IFOBT (LAB)", "TARIKH BERI KIT IFOBT (SELF)", "POSITIF (SELF)", "NEGATIF (SELF)",
+            "RUJUK SOPD/ GASTRO (IFOBT)", "ENGGAN RUJUK (IFOBT)", 
+            "HADIR/ TIDAK HADIR / BELUM SAMPAI TCA (SOPD)", 
+            "KOLONOSKOPI (HADIR/ TIDAK PERLU/ CICIR/ REFUSED/ BELUM DIJALANKAN )", 
+            "KEPUTUSAN KOLONOSKOPI", 
+            "KATEGORI KEPUTUSAN SCOPE", 
+            "HPE", 
+            "STAGING (UNTUK KES KANSER)", 
+            "CATATAN", 
+            "BWN"
         ];
 
         function showDetail(index) {
@@ -961,11 +968,19 @@
             currentEditRowIndex = index;
             document.getElementById('modalTitle').innerText = "Detail: " + r[5];
             let body = "";
-            const editableIndices = [25, 26, 27, 28, 29, 30, 31];
+            const editableCols = [
+                "HADIR/ TIDAK HADIR / BELUM SAMPAI TCA (SOPD)", 
+                "KOLONOSKOPI (HADIR/ TIDAK PERLU/ CICIR/ REFUSED/ BELUM DIJALANKAN )", 
+                "KEPUTUSAN KOLONOSKOPI", 
+                "KATEGORI KEPUTUSAN SCOPE", 
+                "HPE", 
+                "STAGING (UNTUK KES KANSER)", 
+                "CATATAN"
+            ];
 
             DB_LABELS.forEach((label, i) => {
                 const val = (r[i] || "").trim();
-                if(editableIndices.includes(i)) {
+                if(editableCols.includes(label)) {
                     body += `<div class="detail-item editable-field">
                         <div class="detail-label">${label} <span style="color:var(--primary); font-size:0.6rem;">(Edit)</span></div>
                         <textarea class="edit-input" data-col="${label}" rows="2">${val}</textarea>
