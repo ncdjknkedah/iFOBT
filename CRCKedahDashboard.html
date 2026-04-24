@@ -307,28 +307,62 @@
                 </div>
 
                 <div class="stats-grid">
-                    <div style="grid-column: span 1; display: flex; flex-direction: column; gap: 15px;">
-                        <div class="stat-card" style="border-left: 5px solid var(--primary);">
-                            <div style="flex:1">
-                                <div class="stat-label">Saringan Pertama (K.Baru)</div>
-                                <div class="stat-value" id="over-scr1-val">0</div>
-                                <div id="over-scr1-meta" style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;"></div>
-                            </div>
-                        </div>
-                        <div class="card" style="padding: 15px; flex-grow: 1;">
-                            <h3 style="font-size: 0.85rem; margin-bottom: 15px;">📊 Kategori Saringan (%)</h3>
-                            <div style="height: 140px;"><canvas id="chartOverviewCat"></canvas></div>
+                    <!-- Row 1: Overall Summary -->
+                    <div class="stat-card" style="border-left: 5px solid #64748b;">
+                        <div style="flex:1">
+                            <div class="stat-label">Jumlah Saringan Keseluruhan</div>
+                            <div class="stat-value" id="over-total-val">0</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted);">Keseluruhan Database</div>
                         </div>
                     </div>
-                    
+                    <div class="stat-card" style="border-left: 5px solid #3b82f6;">
+                        <div style="flex:1">
+                            <div class="stat-label">Saringan Asimtomatik</div>
+                            <div class="stat-value" id="over-asim-val">0</div>
+                            <div id="over-asim-meta" style="font-size: 0.7rem; color: var(--text-muted);">Saringan 1 + Saringan 2</div>
+                        </div>
+                    </div>
+                    <div class="stat-card" style="border-left: 5px solid #f59e0b;">
+                        <div style="flex:1">
+                            <div class="stat-label">Saringan Berisiko Tinggi</div>
+                            <div class="stat-value" id="over-risk-val">0</div>
+                            <div id="over-risk-meta" style="font-size: 0.7rem; color: var(--text-muted);">Faktor Risiko Sahaja</div>
+                        </div>
+                    </div>
+                    <div class="stat-card" style="border-left: 5px solid #ef4444;">
+                        <div style="flex:1">
+                            <div class="stat-label">Saringan Bergejala</div>
+                            <div class="stat-value" id="over-symp-val">0</div>
+                            <div id="over-symp-meta" style="font-size: 0.7rem; color: var(--text-muted);">Mempunyai Gejala</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <!-- Row 2: Charts & Achievement -->
+                    <div class="card" style="grid-column: span 1; padding: 15px; margin-bottom:0;">
+                        <h3 style="font-size: 0.85rem; margin-bottom: 15px;">📊 Kategori Saringan Keseluruhan (%)</h3>
+                        <div style="height: 140px;"><canvas id="chartOverviewCat"></canvas></div>
+                    </div>
+                    <div class="stat-card" style="border-left: 5px solid var(--primary);">
+                        <div style="flex:1">
+                            <div class="stat-label">Pencapaian Saringan Pertama (New)</div>
+                            <div class="stat-value" id="over-scr1-val">0</div>
+                            <div id="over-scr1-meta" style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;"></div>
+                        </div>
+                    </div>
                     <div class="stat-card" style="border-left: 5px solid #8b5cf6;">
                         <div style="flex:1">
-                            <div class="stat-label">Saringan Kedua (Ulangan)</div>
+                            <div class="stat-label">Pencapaian Saringan Kedua (Repeat)</div>
                             <div class="stat-value" id="over-scr2-val">0</div>
                             <div id="over-scr2-meta" style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;"></div>
                         </div>
                     </div>
-                    <div class="stat-card" style="border-left: 5px solid #f59e0b;">
+                </div>
+
+                <div class="stats-grid" style="margin-top:24px;">
+                    <!-- Row 3: Positivity & Referral -->
+                    <div class="stat-card" style="border-left: 5px solid #06b6d4;">
                         <div style="flex:1">
                             <div class="stat-label">iFOBT Positiviti</div>
                             <div class="stat-value" id="over-pos-rate">0%</div>
@@ -342,26 +376,28 @@
                             <div id="over-ref-meta" style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;"></div>
                         </div>
                     </div>
-                </div>
-
-                <div class="stats-grid" style="margin-top:15px;">
-                    <div class="stat-card" style="border-left: 5px solid var(--accent);">
+                    <div class="stat-card" style="border-left: 5px solid #10b981;">
                         <div style="flex:1">
                             <div class="stat-label">Uptake Kolonoskopi</div>
                             <div class="stat-value" id="over-col-val">0</div>
                             <div id="over-col-meta" style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;"></div>
                         </div>
                     </div>
-                    <div class="stat-card" style="border-left: 5px solid #ef4444;">
-                        <div style="flex:1">
-                            <div class="stat-label">Hasil Kolonoskopi (Findings)</div>
-                            <div class="stat-value" id="over-find-val">0</div>
-                            <div id="over-find-meta" style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;"></div>
-                        </div>
+                </div>
+
+                <div class="stats-grid" style="margin-top:24px;">
+                    <!-- Row 4: Detection & Results -->
+                    <div class="card" style="grid-column: span 1; padding: 15px; margin-bottom:0;">
+                        <h3 style="font-size: 0.85rem; margin-bottom: 5px;">📍 Hasil Kolonoskopi (Pai)</h3>
+                        <p style="font-size: 0.65rem; color: var(--text-muted); margin-bottom:10px;">% mengikut jumlah penemuan</p>
+                        <div style="height: 200px;"><canvas id="chartOverviewResults"></canvas></div>
                     </div>
-                    <div class="card" style="grid-column: span 2; padding: 15px;">
-                        <h3 style="font-size: 0.85rem; margin-bottom: 15px;">🔍 Hasil Kolonoskopi (Detection Rate)</h3>
-                        <div style="height: 140px;"><canvas id="chartOverviewResults"></canvas></div>
+                    <div class="card" style="grid-column: span 2; padding: 15px; margin-bottom:0;">
+                        <h3 style="font-size: 0.85rem; margin-bottom: 10px;">🔍 Detection Rate (Kadar Pengesanan Utama)</h3>
+                        <div id="detection-details" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                            <!-- Dynamic -->
+                        </div>
+                        <p style="font-size: 0.7rem; color: var(--text-muted); margin-top:15px; font-style: italic;">Note: Kadar pengesanan dikira daripada Jumlah Saringan Keseluruhan.</p>
                     </div>
                 </div>
             </section>
@@ -724,116 +760,124 @@
                 return matchesMonth && matchesPKD && matchesKK;
             });
 
+            const totalOverall = db.length;
+            const scrBergejala = db.filter(r => r[DB_COL.GEJALA] === 'YA').length;
+            const scrBerisiko = db.filter(r => r[DB_COL.RISIKO] === 'YA').length;
+            const scrAsimtomatik = totalOverall - scrBergejala - scrBerisiko;
+
+            document.getElementById('over-total-val').innerText = fmt(totalOverall);
+            document.getElementById('over-asim-val').innerText = fmt(scrAsimtomatik);
+            document.getElementById('over-risk-val').innerText = fmt(scrBerisiko);
+            document.getElementById('over-symp-val').innerText = fmt(scrBergejala);
+
             const palette = ['#2563eb', '#ef4444', '#16a34a', '#f59e0b', '#7c3aed', '#db2777', '#0891b2', '#4b5563'];
 
-            // 1. Saringan Pertama & Kedua (Kes Baru / Ulangan)
+            // 1. Achievements for Scr 1 & Scr 2
             const scr1 = db.filter(r => (r[DB_COL.JENIS] || '').toUpperCase().includes('BARU')).length;
             const scr2 = db.filter(r => (r[DB_COL.JENIS] || '').toUpperCase().includes('ULANGAN')).length;
             
-            // Normalize mapping: PKD targets keys 
             const getTargetValue = (obj, key) => {
                 if (!key) return obj.TOTAL || 1;
-                // Strip "PKD", dots, and spaces
                 let s = String(key).toUpperCase().replace(/PKD|PK/g, '').replace(/[.\s]/g, '');
                 const resolved = PKD_ALIAS[s] || s;
                 return obj[resolved] || 0;
             };
 
-            const t1_raw = getTargetValue(TARGETS_1, pkdF);
-            const t2_raw = getTargetValue(TARGETS_2, pkdF);
-            const target1 = t1_raw || 1; 
-            const target2 = t2_raw || 1;
+            const target1 = getTargetValue(TARGETS_1, pkdF) || 1; 
+            const target2 = getTargetValue(TARGETS_2, pkdF) || 1;
 
             document.getElementById('over-scr1-val').innerText = fmt(scr1);
             document.getElementById('over-scr1-meta').innerHTML = isRegional ? 
-                `Pencapaian: <strong>${((scr1/target1)*100).toFixed(1)}%</strong> (${scr1}/${target1})` : 
-                `Kiraan Kes Baru di Fasiliti`;
+                `Sasaran: ${fmt(target1)} | <strong>${((scr1/target1)*100).toFixed(1)}%</strong>` : `Milik Fasiliti`;
 
             document.getElementById('over-scr2-val').innerText = fmt(scr2);
             document.getElementById('over-scr2-meta').innerHTML = isRegional ? 
-                `Pencapaian: <strong>${((scr2/target2)*100).toFixed(1)}%</strong> (${scr2}/${target2})` : 
-                `Kiraan Kes Ulangan di Fasiliti`;
+                `Sasaran: ${fmt(target2)} | <strong>${((scr2/target2)*100).toFixed(1)}%</strong>` : `Milik Fasiliti`;
 
             // 2. iFOBT Positiviti
-            const respondScreen = db.filter(r => (r[16] && r[16].trim() !== "") || (r[17] && r[17].trim() !== ""));
-            const posLab = respondScreen.filter(r => (r[18] || '').toUpperCase() === 'YA').length;
-            const posRate = respondScreen.length > 0 ? ((posLab/respondScreen.length)*100).toFixed(1) : "0";
+            const resScreen = db.filter(r => (r[16] && r[16].trim() !== "") || (r[17] && r[17].trim() !== ""));
+            const posLab = resScreen.filter(r => (r[18] || '').toUpperCase() === 'YA').length;
+            const posRate = resScreen.length > 0 ? ((posLab/resScreen.length)*100).toFixed(1) : "0";
             document.getElementById('over-pos-rate').innerText = posRate + "%";
-            document.getElementById('over-pos-meta').innerHTML = `Formula: (${posLab}/${respondScreen.length} Respon Saringan)`;
+            document.getElementById('over-pos-meta').innerHTML = `Bil: ${posLab}/${resScreen.length}`;
 
-            // 3. Rujukan Gastro
-            const totalPos = db.filter(r => (r[18] || '').toUpperCase() === 'YA' || (r[21] || '').toUpperCase() === 'YA').length;
+            // 3. Rujukan & Uptake
             const rujukGastro = db.filter(r => (r[23] || '').toUpperCase() === 'YA').length;
-            const refRate = totalPos > 0 ? ((rujukGastro/totalPos)*100).toFixed(1) : "0";
             document.getElementById('over-ref-val').innerText = fmt(rujukGastro);
-            document.getElementById('over-ref-meta').innerHTML = `Kadar Rujukan: <strong>${refRate}%</strong> (${rujukGastro}/${totalPos} Positif)`;
+            document.getElementById('over-ref-meta').innerText = `Jumlah Rujukan Gastro`;
 
-            // 4. Kolonoskopi Uptake
             const colHadir = db.filter(r => (r[DB_COL.SCOPE] || '').toUpperCase().includes('HADIR')).length;
             const colRate = rujukGastro > 0 ? ((colHadir/rujukGastro)*100).toFixed(1) : "0";
             document.getElementById('over-col-val').innerText = fmt(colHadir);
-            document.getElementById('over-col-meta').innerHTML = `Hadir Scope: <strong>${colRate}%</strong> (${colHadir}/${rujukGastro} Dirujuk)`;
-
-            // 5. Findings & Pengesanan
-            const withFindings = db.filter(r => r[DB_COL.SCOPE_RES] && r[DB_COL.SCOPE_RES].trim() !== "").length;
-            document.getElementById('over-find-val').innerText = fmt(withFindings);
-            document.getElementById('over-find-meta').innerText = `Jumlah Hasil Kolonoskopi (${withFindings} kes)`;
+            document.getElementById('over-col-meta').innerText = `Hadir: ${colHadir} (${colRate}%)`;
 
             // Charts
+            const totalScr = totalOverall || 1;
+            const catData = { 'Asimtomatik': scrAsimtomatik, 'Risiko': scrBerisiko, 'Gejala': scrBergejala };
+            
+            // Register DataLabels
             Chart.register(ChartDataLabels);
-            const totalScr = db.length || 1;
-            const commonPlugins = {
-                datalabels: {
-                    color: '#000',
-                    anchor: 'end', align: 'end', offset: 2,
-                    font: { weight: 'bold', size: 9 },
-                    formatter: (value) => {
-                        const pct = ((value/totalScr)*100).toFixed(2);
-                        return value > 0 ? `${value} (${pct}%)` : '';
-                    }
-                }
-            };
-
-            const catData = { 
-                'Asimtomatik': db.filter(r => r[DB_COL.GEJALA] !== 'YA' && r[DB_COL.RISIKO] !== 'YA').length,
-                'Gejala': db.filter(r => r[DB_COL.GEJALA] === 'YA').length,
-                'Risiko': db.filter(r => r[DB_COL.RISIKO] === 'YA').length
-            };
 
             if(appState.charts.overCat) appState.charts.overCat.destroy();
             appState.charts.overCat = new Chart(document.getElementById('chartOverviewCat'), {
                 type: 'bar',
                 data: {
                     labels: Object.keys(catData),
-                    datasets: [{ data: Object.values(catData), backgroundColor: palette.slice(0, 3) }]
+                    datasets: [{ data: Object.values(catData), backgroundColor: ['#3b82f6', '#f59e0b', '#ef4444'] }]
                 },
                 options: { 
                     responsive: true, maintainAspectRatio: false,
-                    plugins: { ...commonPlugins, legend: { display: false } },
-                    scales: { y: { beginAtZero: true, display: false }, x: { grid: { display:false } } }
+                    plugins: { 
+                        legend: { display: false },
+                        datalabels: {
+                            color: '#000', font: { weight: 'bold' }, anchor: 'end', align: 'top',
+                            formatter: (v) => `${((v/totalScr)*100).toFixed(1)}%`
+                        }
+                    },
+                    scales: { y: { display: false }, x: { grid: { display:false } } }
                 }
             });
 
             const outcomes = {};
             db.forEach(r => {
-                const res = (r[DB_COL.SCOPE_CAT] || '').trim();
+                const res = (r[DB_COL.SCOPE_CAT] || '').trim().toUpperCase();
                 if(res) outcomes[res] = (outcomes[res] || 0) + 1;
             });
+            const totalOutcomes = Object.values(outcomes).reduce((a, b) => a + b, 0) || 1;
 
             if(appState.charts.overRes) appState.charts.overRes.destroy();
             appState.charts.overRes = new Chart(document.getElementById('chartOverviewResults'), {
-                type: 'bar',
+                type: 'pie',
                 data: {
                     labels: Object.keys(outcomes),
                     datasets: [{ data: Object.values(outcomes), backgroundColor: palette }]
                 },
                 options: { 
-                    indexAxis: 'y',
                     responsive: true, maintainAspectRatio: false,
-                    plugins: { ...commonPlugins, legend: { display: false } },
-                    scales: { x: { display: false }, y: { grid: { display: false } } }
+                    plugins: { 
+                        legend: { position: 'right', labels: { boxWidth: 10, font: { size: 9 } } },
+                        datalabels: {
+                            color: '#fff', font: { weight: 'bold', size: 10 },
+                            formatter: (v) => `${v}\n(${((v/totalOutcomes)*100).toFixed(1)}%)`
+                        }
+                    }
                 }
             });
+
+            // 4. Detection Rates (Findings / Total Overall)
+            const findingsHtml = Object.keys(outcomes).map((res, i) => {
+                const count = outcomes[res];
+                const rate = ((count/totalScr)*100).toFixed(2);
+                return `
+                    <div style="background:#f8fafc; padding:12px; border-radius:12px; border-left:4px solid ${palette[i % palette.length]}">
+                        <div style="font-size:0.65rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">${res}</div>
+                        <div style="font-size:1.1rem; font-weight:800;">${rate}%</div>
+                        <div style="font-size:0.65rem; color:var(--text-muted);">${count} kes</div>
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('detection-details').innerHTML = findingsHtml || '<p style="color:var(--text-muted); font-size:0.8rem;">Tiada data kolonoskopi.</p>';
+        }
         }
 
         // ==========================================
