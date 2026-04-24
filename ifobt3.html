@@ -594,16 +594,54 @@
             try {
                 lucide.createIcons();
                 // Fetch all data
-                const [s25, s26, db] = await Promise.all([
+                const [s25, s26] = await Promise.all([
                     fetchCSV(STOCK_ID, SHEETS.stok2025),
-                    fetchCSV(STOCK_ID, SHEETS.stok2026),
-                    fetchCSV(ACTIVITY_ID, SHEETS.database)
+                    fetchCSV(STOCK_ID, SHEETS.stok2026)
                 ]);
+
+                const sheetUrl = `https://docs.google.com/spreadsheets/d/${ACTIVITY_ID}/gviz/tq?tqx=out:csv&gid=${SHEETS.database}`;
+                const res = await fetch(sheetUrl);
+                const csv = await res.text();
+                let rawData = Papa.parse(csv, { skipEmptyLines: true }).data;
+                
+                // Remove header
+                const headers = rawData.shift(); 
+
+                // ==========================================
+                // APPLY PENDING LOCAL CACHE (Dirty Sync)
+                // ==========================================
+                const cache = JSON.parse(localStorage.getItem('crc_pending_updates') || '{}');
+                const cleanCache = { ...cache };
+                let cacheUsed = false;
+
+                rawData = rawData.map(row => {
+                    const ic = row[6]; // Index 6 is IC
+                    if (cache[ic]) {
+                        const cachedData = cache[ic];
+                        let isDifferent = false;
+                        
+                        // Check if Excel data is still "old"
+                        for (let colName in cachedData) {
+                            const idx = DB_LABELS.indexOf(colName);
+                            if (idx !== -1 && cachedData[colName] !== row[idx]) {
+                                row[idx] = cachedData[colName];
+                                isDifferent = true;
+                            }
+                        }
+
+                        // If CSV finally matches our update, remove from cache
+                        if (!isDifferent) {
+                            delete cleanCache[ic];
+                            cacheUsed = true;
+                        }
+                    }
+                    return row;
+                });
+                if (cacheUsed) localStorage.setItem('crc_pending_updates', JSON.stringify(cleanCache));
 
                 appState.stokData[2025] = s25;
                 appState.stokData[2026] = s26;
-                // Filter database to remove header row and empty rows
-                appState.databaseRaw = db.filter((r, i) => i > 0 && r[5] && r[5].trim() !== ""); 
+                appState.databaseRaw = rawData.filter((r, i) => r[5] && r[5].trim() !== ""); 
                 appState.databaseFiltered = appState.databaseRaw;
 
                 loadSettings();
@@ -1017,28 +1055,31 @@
 
             // Teknik Pantas: Gunakan Image object untuk pintas CORS dan wait-time
             const params = new URLSearchParams(updates).toString();
-            const fullUrl = `${url}?${params}`;
-            
-            const img = new Image();
-            img.onload = img.onerror = function() {
-                alert("Permohonan kemaskini telah dihantar. Sila tunggu 5-10 saat untuk data berubah di Sheet.");
+            try {
+                // Use fetch with standard mode to detect network errors better
+                await fetch(`${url}?${params}`, { mode: 'no-cors' });
+                
+                // 1. SAVE TO PERMANENT LOCAL CACHE (To survive refresh)
+                const cache = JSON.parse(localStorage.getItem('crc_pending_updates') || '{}');
+                cache[updates.ic] = updates; // Map by IC
+                localStorage.setItem('crc_pending_updates', JSON.stringify(cache));
+
+                // 2. UPDATE CURRENT STATE
+                inputs.forEach(inp => {
+                    const colName = inp.getAttribute('data-col');
+                    const colIdx = DB_LABELS.indexOf(colName);
+                    if(colIdx !== -1) appState.databaseRaw[currentEditRowIndex][colIdx] = inp.value;
+                });
+                renderDatabaseTable();
+
+                alert("✅ BERJAYA! Data telah dihantar ke Google Sheets dan dikemaskini pada paparan anda.");
                 closeModal();
+            } catch (e) {
+                alert("❌ RALAT: Gagal menghantar data. Sila pastikan internet anda stabil dan URL Web App betul. (Error: " + e + ")");
+            } finally {
                 btn.disabled = false;
                 btn.innerHTML = oldText;
-            };
-            
-            // Set timeout sekiranya terlalu lama (10 saat)
-            setTimeout(() => {
-                if(btn.disabled) {
-                    alert("Proses mengambil masa. Sila semak Google Sheet anda sebentar lagi.");
-                    closeModal();
-                    btn.disabled = false;
-                    btn.innerHTML = oldText;
-                }
-            }, 10000);
-
-            img.src = fullUrl;
-            console.log("Sending update to:", fullUrl);
+            }
         }
 
         function changePage(d) {
