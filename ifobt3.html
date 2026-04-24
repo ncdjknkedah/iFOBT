@@ -285,28 +285,28 @@
                         <div style="flex:1">
                             <div class="stat-label">Saringan Pertama (K.Baru)</div>
                             <div class="stat-value" id="over-scr1-val">0</div>
-                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;">Sasaran: <span id="over-scr1-target">9000</span> (<span id="over-scr1-pct">0%</span>)</div>
+                            <div id="over-scr1-meta" style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;"></div>
                         </div>
                     </div>
-                    <div class="stat-card" style="border-left: 5px solid var(--secondary);">
+                    <div class="stat-card" style="border-left: 5px solid #8b5cf6;">
                         <div style="flex:1">
                             <div class="stat-label">Saringan Kedua (Ulangan)</div>
                             <div class="stat-value" id="over-scr2-val">0</div>
-                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;">Sasaran: <span id="over-scr2-target">6218</span> (<span id="over-scr2-pct">0%</span>)</div>
+                            <div id="over-scr2-meta" style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;"></div>
                         </div>
                     </div>
                     <div class="stat-card" style="border-left: 5px solid #f59e0b;">
                         <div style="flex:1">
                             <div class="stat-label">iFOBT Positiviti</div>
                             <div class="stat-value" id="over-pos-rate">0%</div>
-                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;">Kump. Asimtomatik</div>
+                            <div id="over-pos-meta" style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;"></div>
                         </div>
                     </div>
-                    <div class="stat-card" style="border-left: 5px solid #ef4444;">
+                    <div class="stat-card" style="border-left: 5px solid #ec4899;">
                         <div style="flex:1">
-                            <div class="stat-label">Rujukan SOPD</div>
+                            <div class="stat-label">Rujukan ke SOPD</div>
                             <div class="stat-value" id="over-ref-val">0</div>
-                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;">Kadar: <span id="over-ref-rate">0%</span></div>
+                            <div id="over-ref-meta" style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;"></div>
                         </div>
                     </div>
                 </div>
@@ -314,16 +314,16 @@
                 <div class="stats-grid" style="margin-top:-10px;">
                     <div class="stat-card" style="border-left: 5px solid var(--accent);">
                         <div style="flex:1">
-                            <div class="stat-label">Kolonoskop Selesai</div>
+                            <div class="stat-label">Uptake Kolonoskopi</div>
                             <div class="stat-value" id="over-col-val">0</div>
-                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;">Uptake: <span id="over-col-rate">0%</span> (dari Rujukan)</div>
+                            <div id="over-col-meta" style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;"></div>
                         </div>
                     </div>
-                    <div class="stat-card" style="border-left: 5px solid #6366f1;">
+                    <div class="stat-card" style="border-left: 5px solid #ef4444;">
                         <div style="flex:1">
-                            <div class="stat-label">Hasil Saringan (Findings)</div>
+                            <div class="stat-label">Jumlah Findings (Scope)</div>
                             <div class="stat-value" id="over-find-val">0</div>
-                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;">Kanser/Polip/Lain-lain</div>
+                            <div id="over-find-meta" style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;"></div>
                         </div>
                     </div>
                 </div>
@@ -565,6 +565,7 @@
         function renderOverview() {
             const pkdF = document.getElementById('overFilterPKD').value;
             const kkF = document.getElementById('overFilterKK').value;
+            const isRegional = !kkF; // Show percentage targets only for State/PKD
 
             // Update KK filter if PKD changed
             if (window.event && window.event.target && window.event.target.id === 'overFilterPKD') updateOverviewKK();
@@ -573,43 +574,65 @@
                 return (!pkdF || r[DB_COL.PKD] === pkdF) && (!kkF || r[DB_COL.KK] === kkF);
             });
 
-            // 1. Saringan Pertama (Kes Baru) vs Kedua (Ulangan)
+            // Colors
+            const palette = ['#2563eb', '#dc2626', '#16a34a', '#d97706', '#7c3aed', '#db2777', '#0891b2', '#4b5563'];
+
+            // 1. Saringan Pertama (Kes Baru)
             const scr1 = db.filter(r => (r[DB_COL.JENIS] || '').toUpperCase().includes('BARU')).length;
-            const scr2 = db.filter(r => (r[DB_COL.JENIS] || '').toUpperCase().includes('ULANGAN')).length;
-            
             const target1 = pkdF ? (TARGETS_1[pkdF] || 1) : TARGETS_1.TOTAL;
-            const target2 = pkdF ? (TARGETS_2[pkdF] || 1) : TARGETS_2.TOTAL;
-
             document.getElementById('over-scr1-val').innerText = fmt(scr1);
-            document.getElementById('over-scr1-target').innerText = fmt(target1);
-            document.getElementById('over-scr1-pct').innerText = ((scr1/target1)*100).toFixed(1) + "%";
-            
-            document.getElementById('over-scr2-val').innerText = fmt(scr2);
-            document.getElementById('over-scr2-target').innerText = fmt(target2);
-            document.getElementById('over-scr2-pct').innerText = ((scr2/target2)*100).toFixed(1) + "%";
+            document.getElementById('over-scr1-meta').innerHTML = isRegional ? 
+                `Pencapaian: <strong>${((scr1/target1)*100).toFixed(1)}%</strong> (${scr1}/${target1})` : 
+                `Kiraan Kes Baru di Fasiliti`;
 
-            // 2. Positiviti Kump. Asimtomatik
+            // 2. Saringan Kedua (Ulangan)
+            const scr2 = db.filter(r => (r[DB_COL.JENIS] || '').toUpperCase().includes('ULANGAN')).length;
+            const target2 = pkdF ? (TARGETS_2[pkdF] || 1) : TARGETS_2.TOTAL;
+            document.getElementById('over-scr2-val').innerText = fmt(scr2);
+            document.getElementById('over-scr2-meta').innerHTML = isRegional ? 
+                `Pencapaian: <strong>${((scr2/target2)*100).toFixed(1)}%</strong> (${scr2}/${target2})` : 
+                `Kiraan Kes Ulangan di Fasiliti`;
+
+            // 3. Positiviti Kump. Asimtomatik
             const asym = db.filter(r => r[DB_COL.GEJALA] !== 'YA' && r[DB_COL.RISIKO] !== 'YA');
             const posAsym = asym.filter(r => r[DB_COL.POS_LAB] === 'YA' || r[DB_COL.POS_SELF] === 'YA').length;
-            document.getElementById('over-pos-rate').innerText = asym.length > 0 ? ((posAsym/asym.length)*100).toFixed(1) + "%" : "0%";
+            const posRate = asym.length > 0 ? ((posAsym/asym.length)*100).toFixed(1) : "0";
+            document.getElementById('over-pos-rate').innerText = posRate + "%";
+            document.getElementById('over-pos-meta').innerHTML = `Formula: (${posAsym}/${asym.length} Saringan Asimtomatik)`;
 
-            // 3. Rujukan SOPD
+            // 4. Rujukan SOPD
             const ref = db.filter(r => r[DB_COL.RUJUK_SOPD] === 'YA').length;
+            const refRate = db.length > 0 ? ((ref/db.length)*100).toFixed(1) : "0";
             document.getElementById('over-ref-val').innerText = fmt(ref);
-            document.getElementById('over-ref-rate').innerText = db.length > 0 ? ((ref/db.length)*100).toFixed(1) + "%" : "0%";
+            document.getElementById('over-ref-meta').innerHTML = `Kadar Rujukan: <strong>${refRate}%</strong> (${ref}/${db.length})`;
 
-            // 4. Kolonoskopi Uptake
+            // 5. Kolonoskopi Uptake
             const colHadir = db.filter(r => (r[DB_COL.SCOPE] || '').toUpperCase().includes('HADIR')).length;
+            const colRate = ref > 0 ? ((colHadir/ref)*100).toFixed(1) : "0";
             document.getElementById('over-col-val').innerText = fmt(colHadir);
-            document.getElementById('over-col-rate').innerText = ref > 0 ? ((colHadir/ref)*100).toFixed(1) + "%" : "0%";
+            document.getElementById('over-col-meta').innerHTML = `Hadir Scope: <strong>${colRate}%</strong> (${colHadir}/${ref} Dirujuk)`;
 
-            // 5. Findings
-            const findings = db.filter(r => r[DB_COL.SCOPE_RES] && r[DB_COL.SCOPE_RES].trim() !== "").length;
-            document.getElementById('over-find-val').innerText = fmt(findings);
+            // 6. Findings
+            const findingsTotal = db.filter(r => r[DB_COL.SCOPE_RES] && r[DB_COL.SCOPE_RES].trim() !== "").length;
+            document.getElementById('over-find-val').innerText = fmt(findingsTotal);
+            document.getElementById('over-find-meta').innerText = `Kanser / Polip / Lain-lain (${findingsTotal} kes)`;
+
+            // Charts Config
+            Chart.register(ChartDataLabels);
+            const commonPlugins = {
+                datalabels: {
+                    color: '#fff',
+                    font: { weight: 'bold', size: 11 },
+                    formatter: (value, ctx) => {
+                        const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                        const pct = total > 0 ? ((value/total)*100).toFixed(1) : 0;
+                        return value > 0 ? `${value} (${pct}%)` : '';
+                    }
+                }
+            };
 
             // Chart: Category %
-            const total = db.length || 1;
-            const catCounts = { 
+            const catData = { 
                 'Asimtomatik': asym.length, 
                 'Gejala': db.filter(r => r[DB_COL.GEJALA] === 'YA').length, 
                 'Risiko': db.filter(r => r[DB_COL.RISIKO] === 'YA').length 
@@ -619,13 +642,19 @@
             appState.charts.overCat = new Chart(document.getElementById('chartOverviewCat'), {
                 type: 'pie',
                 data: {
-                    labels: Object.keys(catCounts).map(k => `${k} (${((catCounts[k]/total)*100).toFixed(1)}%)`),
+                    labels: Object.keys(catData),
                     datasets: [{
-                        data: Object.values(catCounts),
-                        backgroundColor: ['#1e40af', '#3b82f6', '#60a5fa']
+                        data: Object.values(catData),
+                        backgroundColor: palette.slice(0, 3)
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+                options: { 
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { 
+                        ...commonPlugins,
+                        legend: { position: 'bottom' }
+                    }
+                }
             });
 
             // Chart: Outcomes (Findings)
@@ -634,7 +663,6 @@
                 const res = (r[DB_COL.SCOPE_CAT] || '').trim();
                 if(res) outcomes[res] = (outcomes[res] || 0) + 1;
             });
-            const outTotal = Object.values(outcomes).reduce((a, b) => a + b, 0) || 1;
 
             if(appState.charts.overRes) appState.charts.overRes.destroy();
             appState.charts.overRes = new Chart(document.getElementById('chartOverviewResults'), {
@@ -642,16 +670,15 @@
                 data: {
                     labels: Object.keys(outcomes),
                     datasets: [{
-                        label: 'Bil. Kes',
                         data: Object.values(outcomes),
-                        backgroundColor: '#1e40af',
-                        borderRadius: 8
+                        backgroundColor: palette
                     }]
                 },
                 options: { 
                     indexAxis: 'y',
                     responsive: true, maintainAspectRatio: false,
                     plugins: { 
+                        ...commonPlugins,
                         legend: { display: false }
                     }
                 }
