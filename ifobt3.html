@@ -991,24 +991,39 @@
 
             const inputs = document.querySelectorAll('.edit-input');
             const row = appState.databaseRaw[currentEditRowIndex];
-            const updates = { 'ic': row[6], 'action': 'update' }; // 6 is NO K/P in DB_LABELS indices
+            const updates = { 'ic': row[6], 'action': 'update' }; 
 
             inputs.forEach(inp => updates[inp.getAttribute('data-col')] = inp.value);
 
             const btn = document.getElementById('saveBtn');
             const oldText = btn.innerHTML;
-            btn.disabled = true; btn.innerText = "Menyimpan...";
+            btn.disabled = true; 
+            btn.innerText = "Menghantar...";
 
-            try {
-                const params = new URLSearchParams(updates).toString();
-                await fetch(`${url}?${params}`, { mode: 'no-cors' });
-                alert("Permohonan kemaskini telah dihantar ke Google Sheets.");
+            // Teknik Pantas: Gunakan Image object untuk pintas CORS dan wait-time
+            const params = new URLSearchParams(updates).toString();
+            const fullUrl = `${url}?${params}`;
+            
+            const img = new Image();
+            img.onload = img.onerror = function() {
+                alert("Permohonan kemaskini telah dihantar. Sila tunggu 5-10 saat untuk data berubah di Sheet.");
                 closeModal();
-            } catch(e) {
-                alert("Ralat: " + e);
-            } finally {
-                btn.disabled = false; btn.innerHTML = oldText;
-            }
+                btn.disabled = false;
+                btn.innerHTML = oldText;
+            };
+            
+            // Set timeout sekiranya terlalu lama (10 saat)
+            setTimeout(() => {
+                if(btn.disabled) {
+                    alert("Proses mengambil masa. Sila semak Google Sheet anda sebentar lagi.");
+                    closeModal();
+                    btn.disabled = false;
+                    btn.innerHTML = oldText;
+                }
+            }, 10000);
+
+            img.src = fullUrl;
+            console.log("Sending update to:", fullUrl);
         }
 
         function changePage(d) {
