@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Pemantauan CRC Kedah | Dashboard & Laporan</title>
+    <meta name="description" content="Dashboard Pemantauan & Aktiviti Saringan Kanser Kolorektal - JKN Kedah">
+    
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        :root {
+            /* Colors - Blue Ribbon/Colorectal Awareness Theme */
+            --primary: #1e40af;
+            --primary-light: #3b82f6;
+            --secondary: #60a5fa;
+            --accent: #0ea5e9;
+            --bg-body: #f0f4f8;
+            --bg-sidebar: #ffffff;
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #cbd5e1;
+            --sidebar-width: 280px;
+            --sidebar-collapsed: 80px;
+            --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+            --shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            --glass: rgba(255, 255, 255, 0.8);
+            --gradient: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        }
+
+        [data-theme="dark"] {
+            /* Basic dark mode support - can be expanded */
+            --bg-body: #0f172a;
+            --bg-sidebar: #1e293b;
+            --bg-card: #1e293b;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-body); color: var(--text-main); overflow-x: hidden; transition: background 0.3s ease; }
+
+        /* App Wrapper */
+        .app-wrapper { display: flex; min-height: 100vh; }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            position: fixed;
+            height: 100vh;
+            left: 0; top: 0;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .sidebar.collapsed { width: var(--sidebar-collapsed); }
+
+        .sidebar-header {
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .logo-box {
+            width: 40px; height: 40px;
+            background: var(--gradient);
+            border-radius: 10px;
+            display: flex;
+            align-items: center; justify-content: center;
+            color: white;
+            flex-shrink: 0;
+        }
+        .sidebar-title { font-weight: 800; font-size: 1.1rem; line-height: 1.2; transition: opacity 0.3s; white-space: nowrap; }
+        .sidebar.collapsed .sidebar-title { opacity: 0; width: 0; overflow: hidden; }
+
+        .nav-menu { flex: 1; padding: 20px 12px; display: flex; flex-direction: column; gap: 8px; }
+        .nav-item {
+            display: flex; align-items: center;
+            padding: 12px; gap: 12px;
+            border-radius: 12px;
+            color: var(--text-muted);
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .nav-item:hover { background: #f9fafb; color: var(--primary); }
+        .nav-item.active { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); }
+        .nav-item i { width: 20px; text-align: center; }
+        .nav-label { font-weight: 500; font-size: 0.95rem; }
+        .sidebar.collapsed .nav-label { display: none; }
+
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            padding: 32px;
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .sidebar.collapsed + .main-content { margin-left: var(--sidebar-collapsed); }
+
+        /* Utility Components */
+        .header-top {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            margin-bottom: 40px;
+        }
+        .page-info h1 { font-size: 1.8rem; font-weight: 800; letter-spacing: -0.02em; }
+        .page-info p { color: var(--text-muted); margin-top: 4px; }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 24px;
+        }
+
+        /* Summary Stats */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-bottom: 32px; }
+        .stat-card {
+            background: white; border-radius: 20px; padding: 24px;
+            border: 1px solid var(--border);
+            display: flex; align-items: center; gap: 20px;
+        }
+        .stat-icon {
+            width: 54px; height: 54px; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .stat-value { font-size: 1.6rem; font-weight: 800; }
+        .stat-label { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+
+        /* Detail Modal Styling */
+        .detail-item { border-bottom: 1px solid var(--border); padding: 12px 0; }
+        .detail-label { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; }
+        .detail-value { font-size: 0.95rem; color: var(--text-main); line-height: 1.5; }
+        .editable-field { background: #f0f7ff; border: 1px dashed #3b82f6 !important; border-radius: 8px; padding: 10px; margin-top: 8px; }
+        .edit-input { width: 100%; border: 1px solid #d1d5db; border-radius: 8px; padding: 8px; font-size: 0.9rem; font-family: inherit; resize: vertical; margin-top: 4px; }
+        .edit-input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+
+        /* Tables */
+        .table-container { overflow-x: auto; margin-top: 20px; border-radius: 12px; border: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; text-align: left; }
+        th { background: #f9fafb; padding: 14px 20px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; font-size: 0.75rem; border-bottom: 1px solid var(--border); }
+        td { padding: 14px 20px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background: #f8fafc; }
+
+        .badge {
+            padding: 4px 10px; border-radius: 100px; font-size: 0.75rem; font-weight: 600; text-transform: capitalize;
+        }
+        .badge-positive { background: #fee2e2; color: #ef4444; }
+        .badge-negative { background: #dcfce7; color: #10b981; }
+
+        /* Tabs within Report */
+        .tab-nav { display: flex; gap: 4px; margin-bottom: 24px; background: #e2e8f0; padding: 4px; border-radius: 12px; width: fit-content; }
+        .tab-btn {
+            padding: 8px 20px; border-radius: 8px; border: none; cursor: pointer;
+            font-weight: 600; font-size: 0.85rem; transition: all 0.2s; background: transparent; color: var(--text-muted);
+        }
+        .tab-btn.active { background: white; color: var(--primary); box-shadow: var(--shadow-sm); }
+
+        /* Loader */
+        .loader-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-body); z-index: 2000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.5s, visibility 0.5s;
+        }
+        .loader-overlay.hidden { opacity: 0; visibility: hidden; }
+        .spinner { width: 50px; height: 50px; border: 4px solid #eef2ff; border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Search & Filters */
+        .controls { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+        .input-group { flex: 1; min-width: 200px; position: relative; }
+        .input-group input { 
+            width: 100%; padding: 12px 16px 12px 42px; border-radius: 12px; border: 1px solid var(--border);
+            font-family: inherit; font-size: 0.95rem; outline: none; transition: border 0.2s;
+        }
+        .input-group input:focus { border-color: var(--primary); }
+        .input-group i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar { width: var(--sidebar-collapsed); }
+            .sidebar .sidebar-title, .sidebar .nav-label { display: none; }
+            .main-content { margin-left: var(--sidebar-collapsed); }
+        }
+        @media (max-width: 768px) {
+            .main-content { padding: 16px; }
+            .stats-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px;
+            border-radius: 12px; font-weight: 600; font-size: 0.9rem; cursor: pointer;
+            transition: all 0.2s; border: none;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: #4338ca; }
+        .btn-outline { background: white; border: 1px solid var(--border); color: var(--text-main); }
+        .btn-outline:hover { background: #f9fafb; }
+    </style>
+</head>
+<body>
+
+    <div class="loader-overlay" id="loader">
+        <div class="spinner"></div>
+        <p style="margin-top: 16px; font-weight: 500;">Memuatkan data sistem...</p>
+    </div>
+
+    <div class="app-wrapper">
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-box">
+                    <i data-lucide="shield-check"></i>
+                </div>
+                <div class="sidebar-title">
+                    <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Portal Monitoring</div>
+                    CRC KEDAH
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <div class="nav-item active" onclick="switchTab('overview')" data-tab="overview">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span class="nav-label">Ringkasan Eksekutif</span>
+                </div>
+                <div class="nav-item" onclick="switchTab('stok')" data-tab="stok">
+                    <i data-lucide="package"></i>
+                    <span class="nav-label">Pemantauan Stok iFOBT</span>
+                </div>
+                <div class="nav-item" onclick="switchTab('database')" data-tab="database">
+                    <i data-lucide="database"></i>
+                    <span class="nav-label">Aktiviti Saringan</span>
+                </div>
+                <div class="nav-item" onclick="switchTab('laporan')" data-tab="laporan">
+                    <i data-lucide="file-text"></i>
+                    <span class="nav-label">Laporan Reten</span>
+                </div>
+                <div class="nav-item" onclick="switchTab('settings')" data-tab="settings">
+                    <i data-lucide="settings"></i>
+                    <span class="nav-label">Tetapan Sistem</span>
+                </div>
+            </nav>
+
+            <div style="padding: 24px; border-top: 1px solid var(--border);">
+                <div class="nav-item" onclick="toggleSidebar()">
+                    <i data-lucide="menu"></i>
+                    <span class="nav-label">Collapse Menu</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            <section id="view-overview" class="view">
+                <div class="header-top">
+                    <div class="page-info">
+                        <h1>🏠 Ringkasan Eksekutif</h1>
+                        <p>Analisis pencapaian dan status program saringan CRC Kedah</p>
+                    </div>
+                </div>
+
+                <div class="controls" style="margin-bottom: 20px; display: flex; flex-wrap: wrap; gap:15px; align-items: flex-end;">
+                    <div style="flex: 1; min-width: 250px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                            <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">Pilih Bulan (Multi-select)</label>
+                            <button class="btn" style="padding:2px 8px; font-size:0.65rem;" onclick="toggleAllMonths()">Semua/Tiada</button>
+                        </div>
+                        <div id="overFilterMonthContainer" style="background: white; border: 1px solid var(--border); border-radius: 8px; padding: 10px; max-height: 100px; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 10px;">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                    <div style="width: 200px;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 5px;">Pilih Daerah</label>
+                        <select id="overFilterPKD" class="btn btn-outline" style="width:100%" onchange="renderOverview()">
+                            <option value="">Semua Daerah (Kedah)</option>
+                        </select>
+                    </div>
+                    <div style="width: 200px;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 5px;">Pilih Klinik</label>
+                        <select id="overFilterKK" class="btn btn-outline" style="width:100%" onchange="renderOverview()">
+                            <option value="">Semua Klinik (KK)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div style="grid-column: span 1; display: flex; flex-direction: column; gap: 15px;">
+                        <div class="stat-card" style="border-left: 5px solid var(--primary);">
+                            <div style="flex:1">
+                                <div class="stat-label">Saringan Pertama (K.Baru)</div>
+                                <div class="stat-value" id="over-scr1-val">0</div>
+                                <div id="over-scr1-meta" style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;"></div>
+                            </div>
+                        </div>
+                        <div class="card" style="padding: 15px; flex-grow: 1;">
+                            <h3 style="font-size: 0.85rem; margin-bottom: 15px;">📊 Kategori Saringan (%)</h3>
+                            <div style="height: 140px;"><canvas id="chartOverviewCat"></canvas></div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card" style="border-left: 5px solid #8b5cf6;">
+                        <div style="flex:1">
+                            <div class="stat-label">Saringan Kedua (Ulangan)</div>
+                            <div class="stat-value" id="over-scr2-val">0</div>
+                            <div id="over-scr2-meta" style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;"></div>
+                        </div>
+                    </div>
+                    <div class="stat-card" style="border-left: 5px solid #f59e0b;">
+                        <div style="flex:1">
+                            <div class="stat-label">iFOBT Positiviti</div>
+                            <div class="stat-value" id="over-pos-rate">0%</div>
+                            <div id="over-pos-meta" style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;"></div>
+                        </div>
+                    </div>
+                    <div class="stat-card" style="border-left: 5px solid #ec4899;">
+                        <div style="flex:1">
+                            <div class="stat-label">Rujukan ke Gastro/SOPD</div>
+                            <div class="stat-value" id="over-ref-val">0</div>
+                            <div id="over-ref-meta" style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats-grid" style="margin-top:15px;">
+                    <div class="stat-card" style="border-left: 5px solid var(--accent);">
+                        <div style="flex:1">
+                            <div class="stat-label">Uptake Kolonoskopi</div>
+                            <div class="stat-value" id="over-col-val">0</div>
+                            <div id="over-col-meta" style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;"></div>
+                        </div>
+                    </div>
+                    <div class="stat-card" style="border-left: 5px solid #ef4444;">
+                        <div style="flex:1">
+                            <div class="stat-label">Hasil Kolonoskopi (Findings)</div>
+                            <div class="stat-value" id="over-find-val">0</div>
+                            <div id="over-find-meta" style="font-size: 0.75rem; color: var(--text-muted); margin-top:4px;"></div>
+                        </div>
+                    </div>
+                    <div class="card" style="grid-column: span 2; padding: 15px;">
+                        <h3 style="font-size: 0.85rem; margin-bottom: 15px;">🔍 Hasil Kolonoskopi (Detection Rate)</h3>
+                        <div style="height: 140px;"><canvas id="chartOverviewResults"></canvas></div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-stok" class="view" style="display: none;">
+                <div class="header-top">
+                    <div class="page-info">
+                        <h1>📦 Pemantauan Stok iFOBT</h1>
+                        <p>Analisis kit saringan mengikut daerah dan bulan (Tahun 2026)</p>
+                    </div>
+                </div>
+
+                <div class="stats-grid" id="stok-stats">
+                    <!-- Dynamic -->
+                </div>
+
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2 style="font-size: 1.1rem; font-weight: 700;">Trend Penggunaan Bulanan (2025 vs 2026)</h2>
+                    </div>
+                    <div style="height: 350px;">
+                        <canvas id="chartTrend"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 20px;">📋 Jadual Terperinci Fasiliti (2026)</h2>
+                    <div class="table-container" id="stok-table-wrapper">
+                        <!-- Table -->
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-database" class="view" style="display: none;">
+                <div class="header-top">
+                    <div class="page-info">
+                        <h1>🗂 Pangkalan Data Saringan</h1>
+                        <p>Senarai lengkap rekod aktiviti saringan dari lapangan</p>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <div class="input-group" style="flex: 2;">
+                        <i data-lucide="search"></i>
+                        <input type="text" id="dbSearch" placeholder="Cari Nama atau No K/P..." onkeyup="filterDatabase()">
+                    </div>
+                    <select id="filterDaerah" class="btn btn-outline" onchange="filterDatabase()">
+                        <option value="">Semua Daerah (PKD)</option>
+                    </select>
+                    <select id="filterKK" class="btn btn-outline" onchange="filterDatabase()">
+                        <option value="">Semua Klinik (KK)</option>
+                    </select>
+                    <select id="filterStatus" class="btn btn-outline" onchange="filterDatabase()">
+                        <option value="">Semua Status</option>
+                        <option value="POS">Positif</option>
+                        <option value="NEG">Negatif</option>
+                    </select>
+                </div>
+
+                <div class="card">
+                    <div class="table-container" id="db-table-wrapper">
+                        <!-- Database Table -->
+                    </div>
+                    <div id="db-pagination" style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center;">
+                        <span id="pageInfo" style="font-size: 0.85rem; color: var(--text-muted);">Menunjukkan rekod 1-50</span>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-outline" onclick="changePage(-1)">Sebelumnya</button>
+                            <button class="btn btn-outline" onclick="changePage(1)">Seterusnya</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-laporan" class="view" style="display: none;">
+                <div class="header-top">
+                    <div class="page-info">
+                        <h1>📊 Penjanaan Laporan Reten</h1>
+                        <p>Pilih kategori laporan dan bulan untuk dianalisa</p>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <div class="tab-nav" style="margin-bottom: 0;">
+                        <button class="tab-btn active" onclick="switchReten('4a')">Reten 4(a)</button>
+                        <button class="tab-btn" onclick="switchReten('4b')">Reten 4(b)</button>
+                        <button class="tab-btn" onclick="switchReten('4c')">Reten 4(c)</button>
+                    </div>
+                    <select id="filterMonthReport" class="btn btn-outline" onchange="renderRetenView()" style="min-width: 150px;">
+                        <option value="">Semua Bulan (Terkumpul)</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="exportToPDF()" style="margin-left: auto;">
+                        <i data-lucide="download"></i> Muat Turun PDF
+                    </button>
+                </div>
+
+                <div id="reten-content" class="card">
+                    <!-- Reten Table Content -->
+                </div>
+            </section>
+
+            <!-- VIEW: SETTINGS -->
+            <section id="view-settings" class="view" style="display: none;">
+                <div class="header-top">
+                    <div class="page-info">
+                        <h1>⚙️ Tetapan Sistem</h1>
+                        <p>Pengurusan sasaran (targets) dan kawalan akses admin</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="saveSettings()">
+                        <i data-lucide="save"></i> Simpan Tetapan
+                    </button>
+                </div>
+
+                <div class="grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                    <div class="card">
+                        <h2 style="font-size: 1.1rem; margin-bottom: 20px;">🛡️ Kawalan Keselamatan</h2>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; font-size: 0.8rem; font-weight:700; margin-bottom:5px;">Kata Laluan Admin (Tetapan)</label>
+                            <input type="password" id="setAdminPass" class="btn btn-outline" style="width:100%; text-align:left;">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; font-size: 0.8rem; font-weight:700; margin-bottom:5px;">Kata Laluan Pengguna (Database)</label>
+                            <input type="password" id="setUserPass" class="btn btn-outline" style="width:100%; text-align:left;">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; font-size: 0.8rem; font-weight:700; margin-bottom:5px;">Kata Laluan Kemaskini (Update Data)</label>
+                            <input type="password" id="setUpdatePass" class="btn btn-outline" style="width:100%; text-align:left;">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; font-size: 0.8rem; font-weight:700; margin-bottom:5px;">GAS Update Web App URL</label>
+                            <input type="text" id="setUpdateUrl" class="btn btn-outline" style="width:100%; text-align:left;" placeholder="Paste URL di sini...">
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h2 style="font-size: 1.1rem; margin-bottom: 20px;">ℹ️ Nota Penting</h2>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Nilai sasaran (Targets) yang anda masukkan di sini akan digunakan dalam pengiraan peratusan di Ringkasan Eksekutif. Pastikan nilai adalah angka bulat.</p>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top:24px;">
+                    <h2 style="font-size: 1.1rem; margin-bottom: 20px;">📈 Kemaskini Sasaran (Targets 2026)</h2>
+                    <table id="target-table">
+                        <thead>
+                            <tr><th>Daerah (PKD)</th><th>Sasaran Saringan 1 (K.Baru)</th><th>Sasaran Saringan 2 (Ulangan)</th></tr>
+                        </thead>
+                        <tbody id="target-tbody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+           <script>
+        // ==========================================
+        // CONFIGURATION (Spreadsheet IDs & GIDs)
+        // ==========================================
+        const STOCK_ID = '1QuIJkvtyRHAJVGIArRb5W1UwyTxAfhAN0Iydw8Cs8Og';
+        const ACTIVITY_ID = '1ZOFEcNOICoxMyVFX6-9GIYYN7ZcgEBO6Q7ddZ0MFcW8';
+        
+        const SHEETS = {
+            stok2025: '1888588564',
+            stok2026: '1668827922',
+            database: '683531209'
+        };
+
+        // ==========================================
+        // DATA COLUMN MAPPING (Index-based)
+        // ==========================================
+        // Stok Indices (0-based)
+        const STOK_COL = {
+            BIL: 1, DAERAH: 2, CF: 3, TERIMA: 4, JUM_STOK: 5, JAN: 6, FEB: 7, MAC: 8, APR: 9, MEI: 10, JUN: 11, JUL: 12, OGO: 13, SEP: 14, OKT: 15, NOV: 16, DIS: 17, BAKI: 18, BAZIR: 19
+        };
+
+        // Database Indices (0-based)
+        const DB_COL = {
+            BIL: 0, BULAN: 1, PKD: 2, KK: 3, JENIS: 4, NAMA: 5, KP: 6, UMUR: 7, 
+            GEJALA: 10, RISIKO: 13, 
+            POS_LAB: 18, NEG_LAB: 19, POS_SELF: 21, NEG_SELF: 22, 
+            RUJUK_SOPD: 23, TCA_SOPD: 25, SCOPE: 26, SCOPE_RES: 27, SCOPE_CAT: 28
+        };
+
+        const TARGETS_DEFAULT_1 = {
+            "BALING": 600, "BANDAR BAHARU": 420, "KOTA SETAR": 1500, "KUALA MUDA": 1500,
+            "KUBANG PASU": 1260, "KULIM": 1260, "LANGKAWI": 600, "PADANG TERAP": 420,
+            "PENDANG": 600, "SIK": 420, "YAN": 420, "TOTAL": 9000
+        };
+        const TARGETS_DEFAULT_2 = {
+            "BALING": 507, "BANDAR BAHARU": 228, "KOTA SETAR": 1224, "KUALA MUDA": 1415,
+            "KUBANG PASU": 832, "KULIM": 657, "LANGKAWI": 329, "PADANG TERAP": 225,
+            "PENDANG": 303, "SIK": 220, "YAN": 278, "TOTAL": 6218
+        };
+
+        const PKD_ALIAS = {
+            "B": "BALING", "BAL": "BALING", "BALING": "BALING",
+            "BB": "BANDAR BAHARU", "NN": "BANDAR BAHARU", "BANDARBAHARU": "BANDAR BAHARU",
+            "KS": "KOTA SETAR", "KOTASETAR": "KOTA SETAR",
+            "KM": "KUALA MUDA", "KUALAMUDA": "KUALA MUDA",
+            "KP": "KUBANG PASU", "KUBANGPASU": "KUBANG PASU",
+            "K": "KULIM", "KULIM": "KULIM",
+            "L": "LANGKAWI", "LANGKAWI": "LANGKAWI",
+            "PT": "PADANG TERAP", "PADANGTERAP": "PADANG TERAP", "PADNAGTERAP": "PADANG TERAP",
+            "P": "PENDANG", "PENDANG": "PENDANG",
+            "S": "SIK", "SIK": "SIK",
+            "Y": "YAN", "YAN": "YAN"
+        };
+
+        // Normalize naming for mapping
+        const PKD_MAP = {
+            "PKD. B": "PKD. BALING", "PKD. BB": "PKD. BANDAR BAHARU", "PKD. KS": "PKD. KOTA SETAR",
+            "PKD. KM": "PKD. KUALA MUDA", "PKD. KP": "PKD. KULIM", "PKD. K": "PKD. KUBANG PASU",
+            "PKD. L": "PKD. LANGKAWI", "PKD. PT": "PKD. PADANG TERAP", "PKD. P": "PKD. PENDANG",
+            "PKD. S": "PKD. SIK", "PKD. Y": "PKD. YAN"
+        };
+
+        // GLOBAL APP STATE
+        let appState = {
+            stokData: { 2025: [], 2026: [] },
+            databaseRaw: [],
+            databaseFiltered: [],
+            currentPage: 1,
+            pageSize: 30,
+            activeReten: '4a',
+            charts: {}
+        };
+
+        // ==========================================
+        // INITIALIZATION
+        // ==========================================
+        async function init() {
+            try {
+                lucide.createIcons();
+                // Fetch all data
+                const [s25, s26] = await Promise.all([
+                    fetchCSV(STOCK_ID, SHEETS.stok2025),
+                    fetchCSV(STOCK_ID, SHEETS.stok2026)
+                ]);
+
+                const sheetUrl = `https://docs.google.com/spreadsheets/d/${ACTIVITY_ID}/gviz/tq?tqx=out:csv&gid=${SHEETS.database}`;
+                const res = await fetch(sheetUrl);
+                const csv = await res.text();
+                let rawData = Papa.parse(csv, { skipEmptyLines: true }).data;
+                
+                // Remove header
+                const headers = rawData.shift(); 
+
+                // ==========================================
+                // APPLY PENDING LOCAL CACHE (Dirty Sync)
+                // ==========================================
+                const cache = JSON.parse(localStorage.getItem('crc_pending_updates') || '{}');
+                const cleanCache = { ...cache };
+                let cacheUsed = false;
+
+                rawData = rawData.map(row => {
+                    const ic = (row[6] || "").trim();
+                    const nama = (row[5] || "").trim();
+                    const cacheKey = ic + "_" + nama; // Combined key to prevent contamination
+
+                    if (cache[cacheKey]) {
+                        const cachedData = cache[cacheKey];
+                        let isDifferent = false;
+                        
+                        for (let colName in cachedData) {
+                            const idx = DB_LABELS.indexOf(colName);
+                            // Only apply if indices match and data is actually different
+                            if (idx !== -1 && cachedData[colName] !== row[idx]) {
+                                row[idx] = cachedData[colName];
+                                isDifferent = true;
+                            }
+                        }
+
+                        if (!isDifferent) {
+                            delete cleanCache[cacheKey];
+                            cacheUsed = true;
+                        }
+                    }
+                    return row;
+                });
+                if (cacheUsed) localStorage.setItem('crc_pending_updates', JSON.stringify(cleanCache));
+
+                appState.stokData[2025] = s25;
+                appState.stokData[2026] = s26;
+                appState.databaseRaw = rawData.filter((r, i) => r[5] && r[5].trim() !== ""); 
+                appState.databaseFiltered = appState.databaseRaw;
+
+                loadSettings();
+                populateFilters();
+                updateKKFilter(); 
+                renderOverview();
+                renderStokView();
+                renderDatabaseTable();
+                renderRetenView();
+                renderSettings();
+
+                document.getElementById('loader').classList.add('hidden');
+            } catch (error) {
+                console.error("Initialization Failed:", error);
+                alert("Ralat memuatkan data. Sila pastikan spreadsheet dikongsi secara awam ('Anyone with link can view').");
+            }
+        }
+
+        async function fetchCSV(id, gid) {
+            const url = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv&gid=${gid}`;
+            const response = await fetch(url);
+            if (!response.ok) throw new Error("Gagal memuatkan GID: " + gid);
+            const text = await response.text();
+            return new Promise((resolve) => {
+                Papa.parse(text, { header: false, skipEmptyLines: true, complete: (results) => resolve(results.data) });
+            });
+        }
+
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
+
+        function closeModal() { document.getElementById('detailModal').style.display = 'none'; }
+        window.onclick = function(e) { if(e.target == document.getElementById('detailModal')) closeModal(); }
+
+        function switchTab(tabId) {
+            if(tabId === 'database') {
+                const pass = prompt("Sila masukkan kata laluan untuk mengakses Database:");
+                if(pass !== (localStorage.getItem('crc_user_pass') || 'user123')) {
+                    alert("Kata laluan salah!"); return;
+                }
+            }
+            if(tabId === 'settings') {
+                const pass = prompt("Sila masukkan kata laluan Admin:");
+                if(pass !== (localStorage.getItem('crc_admin_pass') || 'admin123')) {
+                    alert("Kata laluan salah!"); return;
+                }
+            }
+
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            const activeNav = document.querySelector(`.nav-item[data-tab="${tabId}"]`);
+            if(activeNav) activeNav.classList.add('active');
+            document.querySelectorAll('.view').forEach(el => el.style.display = 'none');
+            document.getElementById(`view-${tabId}`).style.display = 'block';
+        }
+
+        // ==========================================
+        // VIEW: OVERVIEW
+        // ==========================================
+        function updateOverviewKK() {
+            const pkdFilter = document.getElementById('overFilterPKD').value;
+            const kks = [...new Set(appState.databaseRaw.filter(r => !pkdFilter || r[DB_COL.PKD] === pkdFilter).map(r => r[DB_COL.KK]))].filter(Boolean).sort();
+            const slct = document.getElementById('overFilterKK');
+            slct.innerHTML = '<option value="">Semua Klinik (KK)</option>';
+            kks.forEach(k => slct.innerHTML += `<option value="${k}">${k}</option>`);
+        }
+
+        function renderOverview() {
+            const pkdF = document.getElementById('overFilterPKD').value;
+            const kkF = document.getElementById('overFilterKK').value;
+            const chosenMonths = Array.from(document.querySelectorAll('.month-cb:checked')).map(cb => cb.value);
+            const isRegional = !kkF; 
+
+            if (window.event && window.event.target && window.event.target.id === 'overFilterPKD') updateOverviewKK();
+
+            const db = appState.databaseRaw.filter(r => {
+                const matchesMonth = chosenMonths.length === 0 || chosenMonths.includes(r[DB_COL.BULAN]);
+                const matchesPKD = !pkdF || r[DB_COL.PKD] === pkdF;
+                const matchesKK = !kkF || r[DB_COL.KK] === kkF;
+                return matchesMonth && matchesPKD && matchesKK;
+            });
+
+            const palette = ['#2563eb', '#ef4444', '#16a34a', '#f59e0b', '#7c3aed', '#db2777', '#0891b2', '#4b5563'];
+
+            // 1. Saringan Pertama & Kedua (Kes Baru / Ulangan)
+            const scr1 = db.filter(r => (r[DB_COL.JENIS] || '').toUpperCase().includes('BARU')).length;
+            const scr2 = db.filter(r => (r[DB_COL.JENIS] || '').toUpperCase().includes('ULANGAN')).length;
+            
+            // Normalize mapping: PKD targets keys 
+            const getTargetValue = (obj, key) => {
+                if (!key) return obj.TOTAL || 1;
+                // Strip "PKD", dots, and spaces
+                let s = String(key).toUpperCase().replace(/PKD|PK/g, '').replace(/[.\s]/g, '');
+                const resolved = PKD_ALIAS[s] || s;
+                return obj[resolved] || 0;
+            };
+
+            const t1_raw = getTargetValue(TARGETS_1, pkdF);
+            const t2_raw = getTargetValue(TARGETS_2, pkdF);
+            const target1 = t1_raw || 1; 
+            const target2 = t2_raw || 1;
+
+            document.getElementById('over-scr1-val').innerText = fmt(scr1);
+            document.getElementById('over-scr1-meta').innerHTML = isRegional ? 
+                `Pencapaian: <strong>${((scr1/target1)*100).toFixed(1)}%</strong> (${scr1}/${target1})` : 
+                `Kiraan Kes Baru di Fasiliti`;
+
+            document.getElementById('over-scr2-val').innerText = fmt(scr2);
+            document.getElementById('over-scr2-meta').innerHTML = isRegional ? 
+                `Pencapaian: <strong>${((scr2/target2)*100).toFixed(1)}%</strong> (${scr2}/${target2})` : 
+                `Kiraan Kes Ulangan di Fasiliti`;
+
+            // 2. iFOBT Positiviti
+            const respondScreen = db.filter(r => (r[16] && r[16].trim() !== "") || (r[17] && r[17].trim() !== ""));
+            const posLab = respondScreen.filter(r => (r[18] || '').toUpperCase() === 'YA').length;
+            const posRate = respondScreen.length > 0 ? ((posLab/respondScreen.length)*100).toFixed(1) : "0";
+            document.getElementById('over-pos-rate').innerText = posRate + "%";
+            document.getElementById('over-pos-meta').innerHTML = `Formula: (${posLab}/${respondScreen.length} Respon Saringan)`;
+
+            // 3. Rujukan Gastro
+            const totalPos = db.filter(r => (r[18] || '').toUpperCase() === 'YA' || (r[21] || '').toUpperCase() === 'YA').length;
+            const rujukGastro = db.filter(r => (r[23] || '').toUpperCase() === 'YA').length;
+            const refRate = totalPos > 0 ? ((rujukGastro/totalPos)*100).toFixed(1) : "0";
+            document.getElementById('over-ref-val').innerText = fmt(rujukGastro);
+            document.getElementById('over-ref-meta').innerHTML = `Kadar Rujukan: <strong>${refRate}%</strong> (${rujukGastro}/${totalPos} Positif)`;
+
+            // 4. Kolonoskopi Uptake
+            const colHadir = db.filter(r => (r[DB_COL.SCOPE] || '').toUpperCase().includes('HADIR')).length;
+            const colRate = rujukGastro > 0 ? ((colHadir/rujukGastro)*100).toFixed(1) : "0";
+            document.getElementById('over-col-val').innerText = fmt(colHadir);
+            document.getElementById('over-col-meta').innerHTML = `Hadir Scope: <strong>${colRate}%</strong> (${colHadir}/${rujukGastro} Dirujuk)`;
+
+            // 5. Findings & Pengesanan
+            const withFindings = db.filter(r => r[DB_COL.SCOPE_RES] && r[DB_COL.SCOPE_RES].trim() !== "").length;
+            document.getElementById('over-find-val').innerText = fmt(withFindings);
+            document.getElementById('over-find-meta').innerText = `Jumlah Hasil Kolonoskopi (${withFindings} kes)`;
+
+            // Charts
+            Chart.register(ChartDataLabels);
+            const totalScr = db.length || 1;
+            const commonPlugins = {
+                datalabels: {
+                    color: '#000',
+                    anchor: 'end', align: 'end', offset: 2,
+                    font: { weight: 'bold', size: 9 },
+                    formatter: (value) => {
+                        const pct = ((value/totalScr)*100).toFixed(2);
+                        return value > 0 ? `${value} (${pct}%)` : '';
+                    }
+                }
+            };
+
+            const catData = { 
+                'Asimtomatik': db.filter(r => r[DB_COL.GEJALA] !== 'YA' && r[DB_COL.RISIKO] !== 'YA').length,
+                'Gejala': db.filter(r => r[DB_COL.GEJALA] === 'YA').length,
+                'Risiko': db.filter(r => r[DB_COL.RISIKO] === 'YA').length
+            };
+
+            if(appState.charts.overCat) appState.charts.overCat.destroy();
+            appState.charts.overCat = new Chart(document.getElementById('chartOverviewCat'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(catData),
+                    datasets: [{ data: Object.values(catData), backgroundColor: palette.slice(0, 3) }]
+                },
+                options: { 
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { ...commonPlugins, legend: { display: false } },
+                    scales: { y: { beginAtZero: true, display: false }, x: { grid: { display:false } } }
+                }
+            });
+
+            const outcomes = {};
+            db.forEach(r => {
+                const res = (r[DB_COL.SCOPE_CAT] || '').trim();
+                if(res) outcomes[res] = (outcomes[res] || 0) + 1;
+            });
+
+            if(appState.charts.overRes) appState.charts.overRes.destroy();
+            appState.charts.overRes = new Chart(document.getElementById('chartOverviewResults'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(outcomes),
+                    datasets: [{ data: Object.values(outcomes), backgroundColor: palette }]
+                },
+                options: { 
+                    indexAxis: 'y',
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { ...commonPlugins, legend: { display: false } },
+                    scales: { x: { display: false }, y: { grid: { display: false } } }
+                }
+            });
+        }
+
+        // ==========================================
+        // VIEW: STOK
+        // ==========================================
+        function renderStokView() {
+            const data26 = appState.stokData[2026];
+            const t26 = data26.find(r => (r[STOK_COL.DAERAH] || '').trim() === 'JUMLAH');
+            if(!t26) return;
+
+            const guna = [6,7,8,9,10,11,12,13,14,15,16,17].reduce((acc, i) => acc + num(t26[i]), 0);
+
+            document.getElementById('stok-stats').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #eef2ff; color: #1e40af;"><i data-lucide="package"></i></div>
+                    <div><div class="stat-label">Jumlah Stok 2026</div><div class="stat-value">${fmt(t26[STOK_COL.JUM_STOK])}</div></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #fff1f2; color: #e11d48;"><i data-lucide="trending-up"></i></div>
+                    <div><div class="stat-label">Penggunaan 2026</div><div class="stat-value">${fmt(guna)}</div></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #ecfdf5; color: #10b981;"><i data-lucide="activity"></i></div>
+                    <div><div class="stat-label">Baki Semasa</div><div class="stat-value" style="color:#10b981;">${fmt(t26[STOK_COL.BAKI])}</div></div>
+                </div>
+            `;
+            lucide.createIcons();
+            renderStokTrends();
+            renderDistrictStokTable();
+        }
+
+        function renderStokTrends() {
+            const ctx = document.getElementById('chartTrend').getContext('2d');
+            const months = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogo','Sep','Okt','Nov','Dis'];
+            const getM = (year) => {
+                const t = appState.stokData[year].find(r => (r[STOK_COL.DAERAH] || '').trim() === 'JUMLAH');
+                return months.map((m, i) => t ? num(t[STOK_COL.JAN + i]) : 0);
+            };
+            const d25 = getM(2025);
+            const d26 = getM(2026).map((v, i) => (v === 0 && i > 2) ? null : v);
+
+            if(appState.charts.trend) appState.charts.trend.destroy();
+            appState.charts.trend = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [
+                        { label: '2025', data: d25, borderColor: '#94a3b8', tension: 0.4, borderDash: [5,5] },
+                        { label: '2026', data: d26, borderColor: '#1e40af', tension: 0.4, borderWidth: 3 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+            });
+        }
+
+        function renderDistrictStokTable() {
+            const districts = appState.stokData[2026].filter(r => num(r[STOK_COL.BIL]) >= 1 && num(r[STOK_COL.BIL]) <= 11);
+            let h = `<table><thead><tr><th>Daerah</th><th>C/F 2025</th><th>Terima</th><th>Jumlah</th><th>Guna</th><th>Baki</th><th>Bazir</th></tr></thead><tbody>`;
+            districts.forEach(d => {
+                const guna = [6,7,8,9,10,11,12,13,14,15,16,17].reduce((acc, i) => acc + num(d[i]), 0);
+                h += `<tr><td><strong>${d[STOK_COL.DAERAH]}</strong></td><td class="num">${fmt(d[STOK_COL.CF])}</td><td class="num">${fmt(d[STOK_COL.TERIMA])}</td><td class="num" style="font-weight:700">${fmt(d[STOK_COL.JUM_STOK])}</td><td class="num" style="color:#ef4444">${fmt(guna)}</td><td class="num" style="color:#10b981;font-weight:700">${fmt(d[STOK_COL.BAKI])}</td><td class="num">${fmt(d[STOK_COL.BAZIR])}</td></tr>`;
+            });
+            document.getElementById('stok-table-wrapper').innerHTML = h + `</tbody></table>`;
+        }
+
+        // ==========================================
+        // VIEW: DATABASE
+        // ==========================================
+        function populateFilters() {
+            const months = [...new Set(appState.databaseRaw.map(r => r[DB_COL.BULAN]))].filter(Boolean);
+            const mContainer = document.getElementById('overFilterMonthContainer');
+            mContainer.innerHTML = "";
+            months.sort().forEach(m => {
+                mContainer.innerHTML += `
+                    <label style="font-size:0.7rem; cursor:pointer;">
+                        <input type="checkbox" class="month-cb" value="${m}" onchange="renderOverview()"> ${m}
+                    </label>`;
+            });
+
+            const pkds = [...new Set(appState.databaseRaw.map(r => r[DB_COL.PKD]))].filter(Boolean).sort();
+            const oPkd = document.getElementById('overFilterPKD');
+            oPkd.innerHTML = '<option value="">Semua Daerah (Kedah)</option>';
+            pkds.forEach(p => oPkd.innerHTML += `<option value="${p}">${p}</option>`);
+
+            const slct = document.getElementById('filterDaerah');
+            slct.innerHTML = '<option value="">Semua Daerah (PKD)</option>';
+            pkds.forEach(p => slct.innerHTML += `<option value="${p}">${p}</option>`);
+
+            const mSlct = document.getElementById('filterMonthReport');
+            if(mSlct) {
+                mSlct.innerHTML = '<option value="">Semua Bulan (Terkumpul)</option>';
+                months.sort().forEach(m => mSlct.innerHTML += `<option value="${m}">${m}</option>`);
+            }
+        }
+
+        function updateKKFilter() {
+            const pkdFilter = document.getElementById('filterDaerah').value;
+            const kks = [...new Set(appState.databaseRaw.filter(r => !pkdFilter || r[DB_COL.PKD] === pkdFilter).map(r => r[DB_COL.KK]))].filter(Boolean).sort();
+            const slct = document.getElementById('filterKK');
+            slct.innerHTML = '<option value="">Semua Klinik (KK)</option>';
+            kks.forEach(k => slct.innerHTML += `<option value="${k}">${k}</option>`);
+        }
+
+        function filterDatabase() {
+            const q = document.getElementById('dbSearch').value.toLowerCase();
+            const pkdF = document.getElementById('filterDaerah').value;
+            const kkF = document.getElementById('filterKK').value;
+            const stF = document.getElementById('filterStatus').value;
+
+            // If PKD changes, update KK list
+            if (event && event.target && event.target.id === 'filterDaerah') updateKKFilter();
+
+            appState.databaseFiltered = appState.databaseRaw.filter(r => {
+                const txt = `${r[DB_COL.NAMA]} ${r[DB_COL.KP]}`.toLowerCase();
+                const isPos = r[DB_COL.POS_LAB] === 'YA' || r[DB_COL.POS_SELF] === 'YA';
+                const isNeg = r[DB_COL.NEG_LAB] === 'YA' || r[DB_COL.NEG_SELF] === 'YA';
+                
+                const matchesSearch = !q || txt.includes(q);
+                const matchesPKD = !pkdF || r[DB_COL.PKD] === pkdF;
+                const matchesKK = !kkF || r[DB_COL.KK] === kkF;
+                const matchesStatus = !stF || (stF === 'POS' ? isPos : isNeg);
+
+                return matchesSearch && matchesPKD && matchesKK && matchesStatus;
+            });
+            appState.currentPage = 1;
+            renderDatabaseTable();
+        }
+
+        function renderDatabaseTable() {
+            const s = (appState.currentPage - 1) * appState.pageSize;
+            const pData = appState.databaseFiltered.slice(s, s + appState.pageSize);
+            let h = `<table><thead><tr>
+                <th>No</th><th>Bulan</th><th>PKD</th><th>Fasilti (KK)</th><th>Nama Pesakit</th><th>No K/P</th><th>Umur</th><th>Status</th><th>Tindakan</th>
+            </tr></thead><tbody>`;
+            pData.forEach((r, i) => {
+                const isPos = r[DB_COL.POS_LAB] === 'YA' || r[DB_COL.POS_SELF] === 'YA';
+                const rowIndex = appState.databaseRaw.indexOf(r);
+                h += `<tr>
+                    <td>${s + i + 1}</td>
+                    <td>${r[DB_COL.BULAN]}</td>
+                    <td>${r[DB_COL.PKD]}</td>
+                    <td>${r[DB_COL.KK]}</td>
+                    <td><strong>${r[DB_COL.NAMA]}</strong></td>
+                    <td>${r[DB_COL.KP]}</td>
+                    <td>${r[DB_COL.UMUR]}</td>
+                    <td><span class="badge badge-${isPos?'positive':'negative'}">${isPos?'POS':'NEG'}</span></td>
+                    <td><button class="btn btn-primary" style="padding:4px 10px; font-size:0.75rem;" onclick="showDetail(${rowIndex})">Detail</button></td>
+                </tr>`;
+            });
+            document.getElementById('db-table-wrapper').innerHTML = h + `</tbody></table>`;
+            document.getElementById('pageInfo').innerText = `Menunjukkan ${s+1}-${Math.min(s+appState.pageSize, appState.databaseFiltered.length)} daripada ${appState.databaseFiltered.length}`;
+        }
+
+        const DB_LABELS = [
+            "BIL", "BULAN RETEN", "NAMA PKD", "NAMA KK", "KES BARU/ ULANGAN", "NAMA", "NO K/P", "UMUR", "ALAMAT", "NO TEL",
+            "BERGEJALA", "BERGEJALA (RUJUK)", "BERGEJALA (ENGGAN RUJUK)", "BERISIKO", "BERISIKO (RUJUK)", "BERISIKO (ENGGAN RUJUK)",
+            "TARIKH BERI BOTOL SPESIMEN IFOBT", "TARIKH IFOBT / HANTAR SPESIMEN", "POSITIF IFOBT (LAB)", "NEGATIF IFOBT (LAB)", "TARIKH BERI KIT IFOBT (SELF)", "POSITIF (SELF)", "NEGATIF (SELF)",
+            "RUJUK SOPD/ GASTRO (IFOBT)", "ENGGAN RUJUK (IFOBT)", 
+            "HADIR/ TIDAK HADIR / BELUM SAMPAI TCA (SOPD)", 
+            "KOLONOSKOPI (HADIR/ TIDAK PERLU/ CICIR/ REFUSED/ BELUM DIJALANKAN )", 
+            "KEPUTUSAN KOLONOSKOPI", 
+            "KATEGORI KEPUTUSAN SCOPE", 
+            "HPE", 
+            "STAGING (UNTUK KES KANSER)", 
+            "CATATAN", 
+            "BWN"
+        ];
+
+        function showDetail(index) {
+            const r = appState.databaseRaw[index];
+            if(!r) return;
+            currentEditRowIndex = index;
+            document.getElementById('modalTitle').innerText = "Detail: " + r[5];
+            let body = "";
+            const editableCols = [
+                "HADIR/ TIDAK HADIR / BELUM SAMPAI TCA (SOPD)", 
+                "KOLONOSKOPI (HADIR/ TIDAK PERLU/ CICIR/ REFUSED/ BELUM DIJALANKAN )", 
+                "KEPUTUSAN KOLONOSKOPI", 
+                "KATEGORI KEPUTUSAN SCOPE", 
+                "HPE", 
+                "STAGING (UNTUK KES KANSER)", 
+                "CATATAN"
+            ];
+
+            DB_LABELS.forEach((label, i) => {
+                const val = (r[i] || "").trim();
+                if(editableCols.includes(label)) {
+                    body += `<div class="detail-item editable-field">
+                        <div class="detail-label">${label} <span style="color:var(--primary); font-size:0.6rem;">(Edit)</span></div>
+                        <textarea class="edit-input" data-col="${label}" rows="2">${val}</textarea>
+                    </div>`;
+                } else {
+                    body += `<div class="detail-item">
+                        <div class="detail-label">${label}</div>
+                        <div class="detail-value">${val || "-"}</div>
+                    </div>`;
+                }
+            });
+            document.getElementById('modalBody').innerHTML = body;
+            document.getElementById('detailModal').style.display = 'block';
+        }
+
+        async function saveCurrentRecord() {
+            const updPass = localStorage.getItem('crc_update_pass') || 'update2026';
+            const pass = prompt("Sila masukkan Kata Laluan Kemaskini:");
+            if(pass !== updPass) { alert("Kata laluan salah!"); return; }
+
+            const url = localStorage.getItem('crc_update_url');
+            if(!url) { alert("Ralat: Sila tetapkan URL Web App GAS di halaman Tetapan."); return; }
+
+            const inputs = document.querySelectorAll('.edit-input');
+            const row = appState.databaseRaw[currentEditRowIndex];
+            const updates = { 
+                'ic': (row[6] || "").trim(), 
+                'NAMA': (row[5] || "").trim(), 
+                'action': 'update' 
+            }; 
+
+            inputs.forEach(inp => updates[inp.getAttribute('data-col')] = inp.value);
+
+            const btn = document.getElementById('saveBtn');
+            const oldText = btn.innerHTML;
+            btn.disabled = true; 
+            btn.innerText = "Menghantar...";
+
+            const params = new URLSearchParams(updates).toString();
+            const fullUrl = `${url}?${params}`;
+            
+            // 1. Tambah ke Cache Lokal dengan Kunci Unik (IC + Nama)
+            const cache = JSON.parse(localStorage.getItem('crc_pending_updates') || '{}');
+            const cacheKey = updates.ic + "_" + row[5]; 
+            cache[cacheKey] = updates;
+            localStorage.setItem('crc_pending_updates', JSON.stringify(cache));
+
+            // 2. Update Memori Sistem Terus
+            inputs.forEach(inp => {
+                const colName = inp.getAttribute('data-col');
+                const colIdx = DB_LABELS.indexOf(colName);
+                if(colIdx !== -1) appState.databaseRaw[currentEditRowIndex][colIdx] = inp.value;
+            });
+            renderDatabaseTable();
+
+            // 3. Hantar ke Google Sheet secara Latar Belakang (Fast Beacon)
+            const img = new Image();
+            img.onload = img.onerror = function() {
+                console.log("Update sent.");
+            };
+            img.src = fullUrl;
+
+            alert("✅ BERJAYA! Maklumat pesakit telah dikemaskini.");
+            closeModal();
+            btn.disabled = false;
+            btn.innerHTML = oldText;
+        }
+
+        function changePage(d) {
+            const max = Math.ceil(appState.databaseFiltered.length / appState.pageSize);
+            appState.currentPage = Math.max(1, Math.min(appState.currentPage + d, max));
+            renderDatabaseTable();
+        }
+
+        // ==========================================
+        // VIEW: LAPORAN (RETEN)
+        // ==========================================
+        function switchReten(t) {
+            appState.activeReten = t;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector(`.tab-btn[onclick="switchReten('${t}')"]`).classList.add('active');
+            renderRetenView();
+        }
+
+        function renderRetenView() {
+            const t = appState.activeReten;
+            const mFilter = document.getElementById('filterMonthReport').value;
+            let db = appState.databaseRaw;
+            
+            // Filter by month if selected
+            if(mFilter) db = db.filter(r => r[DB_COL.BULAN] === mFilter);
+
+            let filtered = (t === '4a') ? db.filter(r => r[DB_COL.GEJALA] !== 'YA' && r[DB_COL.RISIKO] !== 'YA' && num(r[DB_COL.UMUR]) >= 50 && num(r[DB_COL.UMUR]) <= 75) :
+                           (t === '4b') ? db.filter(r => r[DB_COL.GEJALA] === 'YA') : db.filter(r => r[DB_COL.RISIKO] === 'YA');
+
+            const sum = {};
+            filtered.forEach(r => {
+                const p = (r[DB_COL.PKD] || 'TIADA').trim();
+                if(!sum[p]) sum[p] = { total: 0, pos: 0, neg: 0, scope: 0 };
+                sum[p].total++;
+                if(r[DB_COL.POS_LAB] === 'YA' || r[DB_COL.POS_SELF] === 'YA') sum[p].pos++;
+                if(r[DB_COL.NEG_LAB] === 'YA' || r[DB_COL.NEG_SELF] === 'YA') sum[p].neg++;
+                if((r[DB_COL.SCOPE] || '').includes('HADIR')) sum[p].scope++;
+            });
+
+            let h = `<table><thead><tr><th>PKD</th><th>Jumlah</th><th>Positif</th><th>Negatif</th><th>Positiviti (%)</th><th>Scope</th></tr></thead><tbody>`;
+            Object.keys(sum).sort().forEach(p => {
+                const s = sum[p];
+                h += `<tr><td><strong>${p}</strong></td><td>${s.total}</td><td style="color:#ef4444">${s.pos}</td><td style="color:#10b981">${s.neg}</td><td>${s.total?((s.pos/s.total)*100).toFixed(1):0}%</td><td>${s.scope}</td></tr>`;
+            });
+            document.getElementById('reten-content').innerHTML = h + `</tbody></table>`;
+        }
+
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            doc.text("Laporan Reten 4(" + appState.activeReten.slice(-1) + ") - Kedah 2026", 105, 15, { align:'center'});
+            doc.autoTable({ html: '#reten-content table', startY: 25, headStyles: { fillColor: [30,64,175] } });
+            doc.save(`Laporan_Reten_4${appState.activeReten}.pdf`);
+        }
+
+        function num(v) { return v ? parseFloat(String(v).split(',').join('').replace(/[^0-9.\-]/g, '')) || 0 : 0; }
+        // ==========================================
+        // VIEW: SETTINGS
+        // ==========================================
+        function loadSettings() {
+            const t1 = JSON.parse(localStorage.getItem('crc_targets_1') || JSON.stringify(TARGETS_DEFAULT_1));
+            const t2 = JSON.parse(localStorage.getItem('crc_targets_2') || JSON.stringify(TARGETS_DEFAULT_2));
+            window.TARGETS_1 = t1;
+            window.TARGETS_2 = t2;
+            document.getElementById('setAdminPass').value = localStorage.getItem('crc_admin_pass') || 'admin123';
+            document.getElementById('setUserPass').value = localStorage.getItem('crc_user_pass') || 'user123';
+            document.getElementById('setUpdatePass').value = localStorage.getItem('crc_update_pass') || 'update2026';
+            document.getElementById('setUpdateUrl').value = localStorage.getItem('crc_update_url') || '';
+        }
+
+        function renderSettings() {
+            const pkds = Object.keys(TARGETS_DEFAULT_1).filter(k => k !== 'TOTAL');
+            let h = "";
+            pkds.forEach(p => {
+                h += `<tr><td>${p}</td>
+                    <td><input type="number" class="btn btn-outline" style="width:100px;" value="${TARGETS_1[p]}" id="tgt1_${p}"></td>
+                    <td><input type="number" class="btn btn-outline" style="width:100px;" value="${TARGETS_2[p]}" id="tgt2_${p}"></td>
+                </tr>`;
+            });
+            document.getElementById('target-tbody').innerHTML = h;
+        }
+
+        function saveSettings() {
+            const pkds = Object.keys(TARGETS_DEFAULT_1).filter(k => k !== 'TOTAL');
+            let total1 = 0, total2 = 0;
+            pkds.forEach(p => {
+                const v1 = parseInt(document.getElementById(`tgt1_${p}`).value) || 0;
+                const v2 = parseInt(document.getElementById(`tgt2_${p}`).value) || 0;
+                TARGETS_1[p] = v1;
+                TARGETS_2[p] = v2;
+                total1 += v1;
+                total2 += v2;
+            });
+            TARGETS_1.TOTAL = total1;
+            TARGETS_2.TOTAL = total2;
+
+            localStorage.setItem('crc_targets_1', JSON.stringify(TARGETS_1));
+            localStorage.setItem('crc_targets_2', JSON.stringify(TARGETS_2));
+            localStorage.setItem('crc_admin_pass', document.getElementById('setAdminPass').value);
+            localStorage.setItem('crc_user_pass', document.getElementById('setUserPass').value);
+            localStorage.setItem('crc_update_pass', document.getElementById('setUpdatePass').value);
+            localStorage.setItem('crc_update_url', document.getElementById('setUpdateUrl').value);
+
+            alert("Tetapan berjaya disimpan!");
+            renderOverview();
+        }
+
+        function toggleAllMonths() {
+            const boxes = document.querySelectorAll('.month-cb');
+            const allChecked = Array.from(boxes).every(b => b.checked);
+            boxes.forEach(b => b.checked = !allChecked);
+            renderOverview();
+        }
+
+        function fmt(v) { return num(v).toLocaleString('ms-MY'); }
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+    <!-- DETAIL MODAL -->
+    <div id="detailModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.7); z-index:5000; padding:20px; backdrop-filter: blur(4px);">
+        <div class="card" style="max-width:900px; margin:20px auto; max-height:90vh; overflow:hidden; position:relative; background:white; border-radius:20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display:flex; flex-direction:column; padding:0;">
+            <div style="padding:20px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+                <h2 style="font-size:1.25rem; font-weight:700; color:var(--text-main);" id="modalTitle">Maklumat Terperinci Pesakit</h2>
+                <button onclick="closeModal()" style="width:32px; height:32px; border-radius:50%; border:none; background:#f1f5f9; color:#64748b; font-size:20px; display:flex; align-items:center; justify-content:center; cursor:pointer;">&times;</button>
+            </div>
+            <div id="modalBody" style="padding:24px; overflow-y:auto; flex:1; display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:15px; font-size:0.9rem;">
+                <!-- Filled by JS -->
+            </div>
+            <div style="padding:20px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end; gap:12px;">
+                <button id="saveBtn" class="btn btn-primary" onclick="saveCurrentRecord()" style="box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);">
+                    <i data-lucide="save"></i> Simpan Kemaskini
+                </button>
+                <button class="btn btn-outline" onclick="closeModal()">Tutup</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
