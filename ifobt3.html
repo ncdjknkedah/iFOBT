@@ -147,6 +147,14 @@
         .stat-value { font-size: 1.6rem; font-weight: 800; }
         .stat-label { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
 
+        /* Detail Modal Styling */
+        .detail-item { border-bottom: 1px solid var(--border); padding: 12px 0; }
+        .detail-label { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; }
+        .detail-value { font-size: 0.95rem; color: var(--text-main); line-height: 1.5; }
+        .editable-field { background: #f0f7ff; border: 1px dashed #3b82f6 !important; border-radius: 8px; padding: 10px; margin-top: 8px; }
+        .edit-input { width: 100%; border: 1px solid #d1d5db; border-radius: 8px; padding: 8px; font-size: 0.9rem; font-family: inherit; resize: vertical; margin-top: 4px; }
+        .edit-input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+
         /* Tables */
         .table-container { overflow-x: auto; margin-top: 20px; border-radius: 12px; border: 1px solid var(--border); }
         table { width: 100%; border-collapse: collapse; font-size: 0.9rem; text-align: left; }
@@ -476,6 +484,14 @@
                         <div style="margin-bottom: 15px;">
                             <label style="display:block; font-size: 0.8rem; font-weight:700; margin-bottom:5px;">Kata Laluan Pengguna (Database)</label>
                             <input type="password" id="setUserPass" class="btn btn-outline" style="width:100%; text-align:left;">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; font-size: 0.8rem; font-weight:700; margin-bottom:5px;">Kata Laluan Kemaskini (Update Data)</label>
+                            <input type="password" id="setUpdatePass" class="btn btn-outline" style="width:100%; text-align:left;">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; font-size: 0.8rem; font-weight:700; margin-bottom:5px;">GAS Update Web App URL</label>
+                            <input type="text" id="setUpdateUrl" class="btn btn-outline" style="width:100%; text-align:left;" placeholder="Paste URL di sini...">
                         </div>
                     </div>
 
@@ -942,17 +958,57 @@
         function showDetail(index) {
             const r = appState.databaseRaw[index];
             if(!r) return;
+            currentEditRowIndex = index;
             document.getElementById('modalTitle').innerText = "Detail: " + r[5];
             let body = "";
+            const editableIndices = [25, 26, 27, 28, 29, 30, 31];
+
             DB_LABELS.forEach((label, i) => {
-                const val = (r[i] || "-").trim() || "-";
-                body += `<div style="padding:10px; border-bottom:1px solid #eee;">
-                    <div style="font-weight:700; color:var(--text-muted); font-size:0.7rem; text-transform:uppercase;">${label}</div>
-                    <div style="margin-top:2px;">${val}</div>
-                </div>`;
+                const val = (r[i] || "").trim();
+                if(editableIndices.includes(i)) {
+                    body += `<div class="detail-item editable-field">
+                        <div class="detail-label">${label} <span style="color:var(--primary); font-size:0.6rem;">(Edit)</span></div>
+                        <textarea class="edit-input" data-col="${label}" rows="2">${val}</textarea>
+                    </div>`;
+                } else {
+                    body += `<div class="detail-item">
+                        <div class="detail-label">${label}</div>
+                        <div class="detail-value">${val || "-"}</div>
+                    </div>`;
+                }
             });
             document.getElementById('modalBody').innerHTML = body;
             document.getElementById('detailModal').style.display = 'block';
+        }
+
+        async function saveCurrentRecord() {
+            const updPass = localStorage.getItem('crc_update_pass') || 'update2026';
+            const pass = prompt("Sila masukkan Kata Laluan Kemaskini:");
+            if(pass !== updPass) { alert("Kata laluan salah!"); return; }
+
+            const url = localStorage.getItem('crc_update_url');
+            if(!url) { alert("Ralat: Sila tetapkan URL Web App GAS di halaman Tetapan."); return; }
+
+            const inputs = document.querySelectorAll('.edit-input');
+            const row = appState.databaseRaw[currentEditRowIndex];
+            const updates = { 'ic': row[6], 'action': 'update' }; // 6 is NO K/P in DB_LABELS indices
+
+            inputs.forEach(inp => updates[inp.getAttribute('data-col')] = inp.value);
+
+            const btn = document.getElementById('saveBtn');
+            const oldText = btn.innerHTML;
+            btn.disabled = true; btn.innerText = "Menyimpan...";
+
+            try {
+                const params = new URLSearchParams(updates).toString();
+                await fetch(`${url}?${params}`, { mode: 'no-cors' });
+                alert("Permohonan kemaskini telah dihantar ke Google Sheets.");
+                closeModal();
+            } catch(e) {
+                alert("Ralat: " + e);
+            } finally {
+                btn.disabled = false; btn.innerHTML = oldText;
+            }
         }
 
         function changePage(d) {
@@ -1019,6 +1075,8 @@
             window.TARGETS_2 = t2;
             document.getElementById('setAdminPass').value = localStorage.getItem('crc_admin_pass') || 'admin123';
             document.getElementById('setUserPass').value = localStorage.getItem('crc_user_pass') || 'user123';
+            document.getElementById('setUpdatePass').value = localStorage.getItem('crc_update_pass') || 'update2026';
+            document.getElementById('setUpdateUrl').value = localStorage.getItem('crc_update_url') || '';
         }
 
         function renderSettings() {
@@ -1051,6 +1109,8 @@
             localStorage.setItem('crc_targets_2', JSON.stringify(TARGETS_2));
             localStorage.setItem('crc_admin_pass', document.getElementById('setAdminPass').value);
             localStorage.setItem('crc_user_pass', document.getElementById('setUserPass').value);
+            localStorage.setItem('crc_update_pass', document.getElementById('setUpdatePass').value);
+            localStorage.setItem('crc_update_url', document.getElementById('setUpdateUrl').value);
 
             alert("Tetapan berjaya disimpan!");
             renderOverview();
@@ -1067,14 +1127,19 @@
         document.addEventListener('DOMContentLoaded', init);
     </script>
     <!-- DETAIL MODAL -->
-    <div id="detailModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:5000; padding:20px;">
-        <div class="card" style="max-width:900px; margin:auto; max-height:90vh; overflow-y:auto; position:relative; padding-top:60px; background:white; border-radius:20px;">
-            <button onclick="closeModal()" style="position:fixed; top:40px; right:40px; width:40px; height:40px; border-radius:50%; border:none; background:#ef4444; color:white; font-size:24px; cursor:pointer; z-index:5001;">&times;</button>
-            <h2 style="margin-bottom:20px; border-bottom:2px solid var(--primary); padding-bottom:10px;" id="modalTitle">Maklumat Terperinci Pesakit</h2>
-            <div id="modalBody" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:15px; font-size:0.9rem;">
+    <div id="detailModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.7); z-index:5000; padding:20px; backdrop-filter: blur(4px);">
+        <div class="card" style="max-width:900px; margin:20px auto; max-height:90vh; overflow:hidden; position:relative; background:white; border-radius:20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display:flex; flex-direction:column; padding:0;">
+            <div style="padding:20px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+                <h2 style="font-size:1.25rem; font-weight:700; color:var(--text-main);" id="modalTitle">Maklumat Terperinci Pesakit</h2>
+                <button onclick="closeModal()" style="width:32px; height:32px; border-radius:50%; border:none; background:#f1f5f9; color:#64748b; font-size:20px; display:flex; align-items:center; justify-content:center; cursor:pointer;">&times;</button>
+            </div>
+            <div id="modalBody" style="padding:24px; overflow-y:auto; flex:1; display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:15px; font-size:0.9rem;">
                 <!-- Filled by JS -->
             </div>
-            <div style="margin-top:30px; text-align:right;">
+            <div style="padding:20px; background:#f8fafc; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end; gap:12px;">
+                <button id="saveBtn" class="btn btn-primary" onclick="saveCurrentRecord()" style="box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);">
+                    <i data-lucide="save"></i> Simpan Kemaskini
+                </button>
                 <button class="btn btn-outline" onclick="closeModal()">Tutup</button>
             </div>
         </div>
