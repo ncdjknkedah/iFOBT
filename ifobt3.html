@@ -1046,7 +1046,11 @@
 
             const inputs = document.querySelectorAll('.edit-input');
             const row = appState.databaseRaw[currentEditRowIndex];
-            const updates = { 'ic': row[6], 'action': 'update' }; 
+            const updates = { 
+                'ic': (row[6] || "").trim(), 
+                'NAMA': (row[5] || "").trim(), 
+                'action': 'update' 
+            }; 
 
             inputs.forEach(inp => updates[inp.getAttribute('data-col')] = inp.value);
 
