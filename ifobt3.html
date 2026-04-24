@@ -342,12 +342,20 @@
                 </div>
 
                 <div class="controls">
-                    <div class="input-group">
+                    <div class="input-group" style="flex: 2;">
                         <i data-lucide="search"></i>
-                        <input type="text" id="dbSearch" placeholder="Cari Nama, No K/P, atau PKD..." onkeyup="filterDatabase()">
+                        <input type="text" id="dbSearch" placeholder="Cari Nama atau No K/P..." onkeyup="filterDatabase()">
                     </div>
                     <select id="filterDaerah" class="btn btn-outline" onchange="filterDatabase()">
-                        <option value="">Semua Daerah</option>
+                        <option value="">Semua Daerah (PKD)</option>
+                    </select>
+                    <select id="filterKK" class="btn btn-outline" onchange="filterDatabase()">
+                        <option value="">Semua Klinik (KK)</option>
+                    </select>
+                    <select id="filterStatus" class="btn btn-outline" onchange="filterDatabase()">
+                        <option value="">Semua Status</option>
+                        <option value="POS">Positif</option>
+                        <option value="NEG">Negatif</option>
                     </select>
                 </div>
 
@@ -452,6 +460,7 @@
                 appState.databaseFiltered = appState.databaseRaw;
 
                 populateFilters();
+                updateKKFilter(); // Initial populate
                 renderOverview();
                 renderStokView();
                 renderDatabaseTable();
@@ -475,6 +484,9 @@
         }
 
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
+
+        function closeModal() { document.getElementById('detailModal').style.display = 'none'; }
+        window.onclick = function(e) { if(e.target == document.getElementById('detailModal')) closeModal(); }
 
         function switchTab(tabId) {
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
@@ -609,23 +621,46 @@
             // PKD Filter for Database
             const pkds = [...new Set(appState.databaseRaw.map(r => r[DB_COL.PKD]))].filter(Boolean).sort();
             const slct = document.getElementById('filterDaerah');
-            slct.innerHTML = '<option value="">Semua Daerah</option>';
+            slct.innerHTML = '<option value="">Semua Daerah (PKD)</option>';
             pkds.forEach(p => slct.innerHTML += `<option value="${p}">${p}</option>`);
 
             // Month Filter for Reports
             const months = [...new Set(appState.databaseRaw.map(r => r[DB_COL.BULAN]))].filter(Boolean);
             const mSlct = document.getElementById('filterMonthReport');
-            mSlct.innerHTML = '<option value="">Semua Bulan (Terkumpul)</option>';
-            // Sort months logically if possible, otherwise alphabetical
-            months.sort().forEach(m => mSlct.innerHTML += `<option value="${m}">${m}</option>`);
+            if(mSlct) {
+                mSlct.innerHTML = '<option value="">Semua Bulan (Terkumpul)</option>';
+                months.sort().forEach(m => mSlct.innerHTML += `<option value="${m}">${m}</option>`);
+            }
+        }
+
+        function updateKKFilter() {
+            const pkdFilter = document.getElementById('filterDaerah').value;
+            const kks = [...new Set(appState.databaseRaw.filter(r => !pkdFilter || r[DB_COL.PKD] === pkdFilter).map(r => r[DB_COL.KK]))].filter(Boolean).sort();
+            const slct = document.getElementById('filterKK');
+            slct.innerHTML = '<option value="">Semua Klinik (KK)</option>';
+            kks.forEach(k => slct.innerHTML += `<option value="${k}">${k}</option>`);
         }
 
         function filterDatabase() {
             const q = document.getElementById('dbSearch').value.toLowerCase();
-            const f = document.getElementById('filterDaerah').value;
+            const pkdF = document.getElementById('filterDaerah').value;
+            const kkF = document.getElementById('filterKK').value;
+            const stF = document.getElementById('filterStatus').value;
+
+            // If PKD changes, update KK list
+            if (event && event.target && event.target.id === 'filterDaerah') updateKKFilter();
+
             appState.databaseFiltered = appState.databaseRaw.filter(r => {
-                const txt = `${r[DB_COL.NAMA]} ${r[DB_COL.KP]} ${r[DB_COL.KK]}`.toLowerCase();
-                return (!q || txt.includes(q)) && (!f || r[DB_COL.PKD] === f);
+                const txt = `${r[DB_COL.NAMA]} ${r[DB_COL.KP]}`.toLowerCase();
+                const isPos = r[DB_COL.POS_LAB] === 'YA' || r[DB_COL.POS_SELF] === 'YA';
+                const isNeg = r[DB_COL.NEG_LAB] === 'YA' || r[DB_COL.NEG_SELF] === 'YA';
+                
+                const matchesSearch = !q || txt.includes(q);
+                const matchesPKD = !pkdF || r[DB_COL.PKD] === pkdF;
+                const matchesKK = !kkF || r[DB_COL.KK] === kkF;
+                const matchesStatus = !stF || (stF === 'POS' ? isPos : isNeg);
+
+                return matchesSearch && matchesPKD && matchesKK && matchesStatus;
             });
             appState.currentPage = 1;
             renderDatabaseTable();
@@ -634,14 +669,50 @@
         function renderDatabaseTable() {
             const s = (appState.currentPage - 1) * appState.pageSize;
             const pData = appState.databaseFiltered.slice(s, s + appState.pageSize);
-            let h = `<table><thead><tr><th>No</th><th>Bulan</th><th>Klinik</th><th>Nama Pesakit</th><th>No K/P</th><th>Umur</th><th>Kategori</th><th>Status</th></tr></thead><tbody>`;
+            let h = `<table><thead><tr>
+                <th>No</th><th>Bulan</th><th>PKD</th><th>Fasilti (KK)</th><th>Nama Pesakit</th><th>No K/P</th><th>Umur</th><th>Status</th><th>Tindakan</th>
+            </tr></thead><tbody>`;
             pData.forEach((r, i) => {
-                const cat = (r[DB_COL.GEJALA] === 'YA') ? 'Gejala' : (r[DB_COL.RISIKO] === 'YA' ? 'Risiko' : 'Primer');
                 const isPos = r[DB_COL.POS_LAB] === 'YA' || r[DB_COL.POS_SELF] === 'YA';
-                h += `<tr><td>${s + i + 1}</td><td>${r[DB_COL.BULAN]}</td><td><small>${r[DB_COL.PKD]}</small><br>${r[DB_COL.KK]}</td><td><strong>${r[DB_COL.NAMA]}</strong></td><td>${r[DB_COL.KP]}</td><td>${r[DB_COL.UMUR]}</td><td><span class="badge">${cat}</span></td><td><span class="badge badge-${isPos?'positive':'negative'}">${isPos?'POS':'NEG'}</span></td></tr>`;
+                const rowIndex = appState.databaseRaw.indexOf(r);
+                h += `<tr>
+                    <td>${s + i + 1}</td>
+                    <td>${r[DB_COL.BULAN]}</td>
+                    <td>${r[DB_COL.PKD]}</td>
+                    <td>${r[DB_COL.KK]}</td>
+                    <td><strong>${r[DB_COL.NAMA]}</strong></td>
+                    <td>${r[DB_COL.KP]}</td>
+                    <td>${r[DB_COL.UMUR]}</td>
+                    <td><span class="badge badge-${isPos?'positive':'negative'}">${isPos?'POS':'NEG'}</span></td>
+                    <td><button class="btn btn-primary" style="padding:4px 10px; font-size:0.75rem;" onclick="showDetail(${rowIndex})">Detail</button></td>
+                </tr>`;
             });
             document.getElementById('db-table-wrapper').innerHTML = h + `</tbody></table>`;
             document.getElementById('pageInfo').innerText = `Menunjukkan ${s+1}-${Math.min(s+appState.pageSize, appState.databaseFiltered.length)} daripada ${appState.databaseFiltered.length}`;
+        }
+
+        const DB_LABELS = [
+            "BIL", "BULAN RETEN", "NAMA PKD", "NAMA KK", "KES BARU/ ULANGAN", "NAMA", "NO K/P", "UMUR", "ALAMAT", "NO TEL",
+            "BERGEJALA", "BERGEJALA (RUJUK)", "BERGEJALA (ENGGAN RUJUK)", "BERISIKO", "BERISIKO (RUJUK)", "BERISIKO (ENGGAN RUJUK)",
+            "TARIKH BERI BOTOL", "TARIKH IFOBT / HANTAR", "POSITIF LAB", "NEGATIF LAB", "TARIKH SELF", "POSITIF SELF", "NEGATIF SELF",
+            "RUJUK SOPD (IFOBT)", "ENGGAN RUJUK (IFOBT)", "TCA SOPD", "KOLONOSKOPI", "KEPUTUSAN", "KATEGORI SCOPE", "HPE", 
+            "STAGING", "CATATAN", "BWN"
+        ];
+
+        function showDetail(index) {
+            const r = appState.databaseRaw[index];
+            if(!r) return;
+            document.getElementById('modalTitle').innerText = "Detail: " + r[5];
+            let body = "";
+            DB_LABELS.forEach((label, i) => {
+                const val = (r[i] || "-").trim() || "-";
+                body += `<div style="padding:10px; border-bottom:1px solid #eee;">
+                    <div style="font-weight:700; color:var(--text-muted); font-size:0.7rem; text-transform:uppercase;">${label}</div>
+                    <div style="margin-top:2px;">${val}</div>
+                </div>`;
+            });
+            document.getElementById('modalBody').innerHTML = body;
+            document.getElementById('detailModal').style.display = 'block';
         }
 
         function changePage(d) {
@@ -701,5 +772,18 @@
         function fmt(v) { return num(v).toLocaleString('ms-MY'); }
         document.addEventListener('DOMContentLoaded', init);
     </script>
+    <!-- DETAIL MODAL -->
+    <div id="detailModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:5000; padding:20px;">
+        <div class="card" style="max-width:900px; margin:auto; max-height:90vh; overflow-y:auto; position:relative; padding-top:60px; background:white; border-radius:20px;">
+            <button onclick="closeModal()" style="position:fixed; top:40px; right:40px; width:40px; height:40px; border-radius:50%; border:none; background:#ef4444; color:white; font-size:24px; cursor:pointer; z-index:5001;">&times;</button>
+            <h2 style="margin-bottom:20px; border-bottom:2px solid var(--primary); padding-bottom:10px;" id="modalTitle">Maklumat Terperinci Pesakit</h2>
+            <div id="modalBody" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:15px; font-size:0.9rem;">
+                <!-- Filled by JS -->
+            </div>
+            <div style="margin-top:30px; text-align:right;">
+                <button class="btn btn-outline" onclick="closeModal()">Tutup</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
