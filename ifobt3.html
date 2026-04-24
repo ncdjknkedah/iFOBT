@@ -266,7 +266,14 @@
 
         <!-- MAIN CONTENT -->
         <main class="main-content">
-            
+            <section id="view-overview" class="view">
+                <div class="header-top">
+                    <div class="page-info">
+                        <h1>🏠 Ringkasan Eksekutif</h1>
+                        <p>Analisis pencapaian dan status program saringan CRC Kedah</p>
+                    </div>
+                </div>
+
                 <div class="controls" style="margin-bottom: 20px; display: flex; flex-wrap: wrap; gap:15px; align-items: flex-end;">
                     <div style="flex: 1; min-width: 250px;">
                         <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 5px;">Pilih Bulan (Multi-select)</label>
@@ -650,17 +657,20 @@
             const scr1 = db.filter(r => (r[DB_COL.JENIS] || '').toUpperCase().includes('BARU')).length;
             const scr2 = db.filter(r => (r[DB_COL.JENIS] || '').toUpperCase().includes('ULANGAN')).length;
             
-            // Normalize mapping: PKD targets keys might include the prefix
-            const getTarget = (obj, key) => {
-                const normalizedKey = key.trim().toUpperCase().replace(/\.?\s+/g, ' '); // Clean up dots and spacing
+            // Normalize mapping: Clean all dots and spaces to ensure match
+            const getTargetValue = (obj, key) => {
+                const clean = (s) => String(s).replace(/[.\s]/g, '').toUpperCase();
+                const targetKey = clean(key);
                 for (let k in obj) {
-                    if (k.trim().toUpperCase().replace(/\.?\s+/g, ' ') === normalizedKey) return obj[k];
+                    if (clean(k) === targetKey) return obj[k];
                 }
-                return obj[key] || 0;
+                return 0;
             };
 
-            const target1 = pkdF ? (getTarget(TARGETS_1, pkdF) || 1) : TARGETS_1.TOTAL;
-            const target2 = pkdF ? (getTarget(TARGETS_2, pkdF) || 1) : TARGETS_2.TOTAL;
+            const t1_raw = pkdF ? getTargetValue(TARGETS_1, pkdF) : TARGETS_1.TOTAL;
+            const t2_raw = pkdF ? getTargetValue(TARGETS_2, pkdF) : TARGETS_2.TOTAL;
+            const target1 = t1_raw || 1; // Fallback to 1 ONLY if target is 0 or missing
+            const target2 = t2_raw || 1;
 
             document.getElementById('over-scr1-val').innerText = fmt(scr1);
             document.getElementById('over-scr1-meta').innerHTML = isRegional ? 
