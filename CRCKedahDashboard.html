@@ -809,10 +809,8 @@
                 `Sasaran: ${fmt(target2)} | <strong>${((scr2/target2)*100).toFixed(1)}%</strong>` : `Milik Fasiliti`;
 
             // 2. iFOBT Positiviti
-            const resScreen = db.filter(r => (r[16] && r[16].trim() !== "") || (r[17] && r[17].trim() !== ""));
-            const posLab = resScreen.filter(r => (r[18] || '').toUpperCase() === 'YA').length;
-            const posSelf = resScreen.filter(r => (r[21] || '').toUpperCase() === 'YA').length;
-            const totalPosiFOBT = posLab + posSelf;
+            // Mengira semua "YA" di Kolum S (18) atau V (21) daripada keseluruhan DB yang ditapis
+            const totalPosiFOBT = db.filter(r => (r[18] || '').toUpperCase() === 'YA' || (r[21] || '').toUpperCase() === 'YA').length;
             
             // Formula Baru: Numerator (YA S & V) / Denom (Saringan Asimtomatik)
             const posRate = scrAsimtomatik > 0 ? ((totalPosiFOBT/scrAsimtomatik)*100).toFixed(1) : "0";
