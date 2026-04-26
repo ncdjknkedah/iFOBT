@@ -536,70 +536,76 @@
                     </button>
                 </div>
 
-                <div id="reten-paper" class="card reten-official-paper" style="padding: 10mm 15mm; background: white; color: black; font-family: Arial, sans-serif; min-height: 297mm; line-height: 1.1; position: relative;">
+                <div id="reten-paper" class="card reten-official-paper" style="padding: 5mm 8mm; background: white; color: black; font-family: Arial, sans-serif; min-height: 297mm; line-height: 1.0; font-size: 8px;">
                     <!-- Top Gray Bar -->
-                    <div style="background: #d1d5db; color: #000; padding: 4px; text-align: center; font-size: 10px; font-weight: bold; margin-bottom: 5px; border: 1px solid #000;">
+                    <div style="background: #d1d5db; color: #000; padding: 2px; text-align: center; font-size: 7px; font-weight: bold; margin-bottom: 4px; border: 1px solid #000;">
                         Panduan Saringan dan Pengesanan Awal Kanser Kolorektal Edisi 3,2020
                     </div>
 
                     <!-- Top Right Info -->
-                    <div style="text-align: right; font-size: 11px; margin-bottom: 2px;">
-                        <div style="font-weight: bold; margin-bottom: 2px;">Lampiran <span id="retenLampiranCode">4(a)(iii)</span></div>
-                        <div id="retenRefCode" style="font-size: 10px;">spaCRCscreen /JKN/Pindaan3/2023</div>
+                    <div style="text-align: right; font-size: 8px; margin-bottom: 1px;">
+                        <div style="font-weight: bold; margin-bottom: 1px;">Lampiran <span id="retenLampiranCode">4(a)(iii)</span></div>
+                        <div id="retenRefCode" style="font-size: 7px;">spaCRCscreen /JKN/Pindaan3/2023</div>
                     </div>
 
-                    <!-- Logo & Main Titles -->
-                    <div style="text-align: center; margin-bottom: 10px;">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Coat_of_arms_of_Malaysia.svg/300px-Coat_of_arms_of_Malaysia.svg.png" style="width: 60px; margin-bottom: 4px;">
-                        <div style="font-size: 8px; font-weight: bold; margin-bottom: 8px;">Kementerian Kesihatan Malaysia</div>
-                        <div style="font-size: 12px; font-weight: bold; margin-bottom: 1px;">FORMAT RETEN</div>
-                        <div style="font-size: 11px; font-weight: bold; margin-bottom: 1px;">PROGRAM SARINGAN DAN PENGESANAN AWAL</div>
-                        <div style="font-size: 11px; font-weight: bold; margin-bottom: 10px;">KANSER KOLOREKTAL</div>
+                    <!-- Logo with Fallback -->
+                    <div style="text-align: center; margin-bottom: 3px;">
+                        <img src="https://www.selangor.gov.my/index/resources/jata_negara.png" 
+                             style="width: 45px; height: auto;" 
+                             onerror="this.style.display='none'; document.getElementById('logo-placeholder').style.display='block';">
+                        <div id="logo-placeholder" style="display:none; font-weight:bold; font-size:9px; border:1px solid #000; padding:2px; width:fit-content; margin:0 auto;">JATA NEGARA MALAYSIA</div>
+                        
+                        <div style="font-size: 8px; font-weight: bold; margin-bottom: 1px;">Kementerian Kesihatan Malaysia</div>
+                        <div style="font-size: 10px; font-weight: bold; margin-bottom: 1px;">FORMAT RETEN</div>
+                        <div style="font-size: 8.5px; font-weight: bold; margin-bottom: 1px;">PROGRAM SARINGAN DAN PENGESANAN AWAL</div>
+                        <div style="font-size: 8.5px; font-weight: bold; margin-bottom: 4px;">KANSER KOLOREKTAL</div>
                     </div>
 
-                    <!-- Metadata Grid -->
-                    <table style="width: 100%; font-size: 11px; margin-bottom: 10px; border-collapse: collapse;">
-                        <tr>
-                            <td style="width: 150px; padding-bottom: 2px;"><strong>NEGERI :</strong></td>
-                            <td style="border-bottom: 1px dotted #000; padding-bottom: 2px;">KEDAH</td>
-                            <td style="width: 80px;"></td>
-                            <td colspan="2"></td>
-                        </tr>
-                        <tr>
-                            <td style="padding-bottom: 2px;"><strong>Laporan Bulan :</strong></td>
-                            <td style="border-bottom: 1px dotted #000;"><span id="metaMonth">JAN</span></td>
-                            <td></td>
-                            <td style="width: 50px;"><strong>Tahun :</strong></td>
-                            <td style="border-bottom: 1px dotted #000; width: 100px;">2026</td>
-                        </tr>
-                        <tr>
-                            <td colspan="2" style="padding-bottom: 2px;"><strong>Bilangan klinik kesihatan yang terlibat di seluruh Negeri :</strong></td>
-                            <td colspan="3" style="border-bottom: 1px dotted #000;"><span id="metaKKCount">0</span></td>
-                        </tr>
-                        <tr>
-                            <td style="padding-bottom: 2px;"><strong>Bil Doktor/klinik :</strong></td>
-                            <td style="border-bottom: 1px dotted #000;">&nbsp;</td>
-                            <td></td>
-                            <td style="width: 80px;"><strong>Bil FMS/klinik :</strong></td>
-                            <td style="border-bottom: 1px dotted #000;">&nbsp;</td>
-                        </tr>
-                    </table>
+                    <!-- Extremely Compact Metadata Grid -->
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px; font-size: 8.5px; margin-bottom: 4px;">
+                        <div style="flex: 1; display:flex; gap:3px;">
+                            <strong>NEGERI :</strong>
+                            <span style="flex:1; border-bottom: 1px dotted #000;">KEDAH</span>
+                        </div>
+                        <div style="width: 140px; display:flex; gap:3px;">
+                            <strong>Laporan Bulan :</strong>
+                            <span id="metaMonth" style="flex:1; border-bottom: 1px dotted #000; text-align:center;">JAN</span>
+                        </div>
+                        <div style="width: 70px; display:flex; gap:3px;">
+                            <strong>Tahun :</strong>
+                            <span style="flex:1; border-bottom: 1px dotted #000; text-align:center;">2026</span>
+                        </div>
+                    </div>
+                    <div style="font-size: 8.5px; margin-bottom: 3px; display:flex; gap:5px;">
+                        <strong>Bilangan klinik kesihatan yang terlibat di seluruh Negeri :</strong>
+                        <span id="metaKKCount" style="width: 40px; border-bottom: 1px dotted #000; text-align:center;">0</span>
+                    </div>
+                    <div style="display: flex; gap: 15px; font-size: 8.5px; margin-bottom: 6px;">
+                        <div style="flex: 1; display:flex; gap:3px;">
+                            <strong>Bil Doktor/klinik :</strong>
+                            <span style="flex:1; border-bottom: 1px dotted #000;">&nbsp;</span>
+                        </div>
+                        <div style="flex: 1; display:flex; gap:3px;">
+                            <strong>Bil FMS/klinik :</strong>
+                            <span style="flex:1; border-bottom: 1px dotted #000;">&nbsp;</span>
+                        </div>
+                    </div>
 
                     <!-- Kumpulan Sasar Header -->
-                    <div style="background: #c6efce; border: 1px solid #000; padding: 4px; text-align: center; font-size: 11px; font-weight: bold;">
+                    <div style="background: #c6efce; border: 1px solid #000; padding: 3px; text-align: center; font-size: 8.5px; font-weight: bold;">
                         KUMPULAN SASAR : <span id="retenFullTitle"></span>
                     </div>
 
-                    <table id="tableReten" style="width: 100%; border-collapse: collapse; border: 1px solid #000; font-size: 9px; line-height: 1.1;">
+                    <table id="tableReten" style="width: 100%; border-collapse: collapse; border: 1px solid #000; font-size: 8px; line-height: 1.0;">
                         <thead>
-                            <tr style="background: #fff; text-align: center;">
-                                <th style="border: 1px solid #000; width: 35px; padding: 4px;">BIL</th>
-                                <th style="border: 1px solid #000; padding: 4px;">PERKARA</th>
-                                <th style="border: 1px solid #000; width: 65px; padding: 4px;">JUMLAH SEMASA</th>
-                                <th style="border: 1px solid #000; width: 65px; padding: 4px;">PERATUS SEMASA</th>
-                                <th style="border: 1px solid #000; width: 65px; padding: 4px;">JUMLAH KUMULATIF</th>
-                                <th style="border: 1px solid #000; width: 65px; padding: 4px;">PERATUS KUMULATIF</th>
-                                <th style="border: 1px solid #000; width: 160px; padding: 4px;">CATATAN</th>
+                            <tr style="background: #fff; text-align: center; font-weight: bold;">
+                                <th style="border: 1px solid #000; width: 25px; padding: 2px;">BIL</th>
+                                <th style="border: 1px solid #000; padding: 2px;">PERKARA</th>
+                                <th style="border: 1px solid #000; width: 55px; padding: 2px;">JUMLAH SEMASA</th>
+                                <th style="border: 1px solid #000; width: 55px; padding: 2px;">PERATUS SEMASA</th>
+                                <th style="border: 1px solid #000; width: 55px; padding: 2px;">JUMLAH KUMULATIF</th>
+                                <th style="border: 1px solid #000; width: 55px; padding: 2px;">PERATUS KUMULATIF</th>
+                                <th style="border: 1px solid #000; width: 140px; padding: 2px;">CATATAN</th>
                             </tr>
                         </thead>
                         <tbody id="retenBody">
@@ -607,8 +613,10 @@
                         </tbody>
                     </table>
 
-                    <!-- Footer Notes -->
-                        <div style="margin-bottom: 5px;">3. Lampirkan maklumat HPE dan staging bagi kes-kes disahkan kanser kolorektal</div>
+                    <div style="margin-top: 6px; font-size: 8.5px; font-weight: bold;">
+                        <div style="margin-bottom: 1px;">Nota 1. Maklumkan jumlah saringan ulangan</div>
+                        <div style="margin-bottom: 1px;">2. Lampirkan senarai KK yang menjalankan Saringan dan Pengesanan Awal Kolorektal</div>
+                        <div style="margin-bottom: 1px;">3. Lampirkan maklumat HPE dan staging bagi kes-kes disahkan kanser kolorektal</div>
                     </div>
                 </div>
             </section>
@@ -1438,20 +1446,20 @@
             rows.forEach(r => {
                 const darkStyle = "background-color: #000 !important; color: #fff !important; font-weight: bold; -webkit-print-color-adjust: exact;";
                 if(r.isDark) {
-                    html += `<tr style="${darkStyle}">
-                        <td style="border:1px solid #000; text-align:center; ${darkStyle}">${r.id}</td>
-                        <td colspan="5" style="border:1px solid #000; padding:6px; ${darkStyle}">${r.label}</td>
+                    html += `<tr style="${darkStyle}; height: 14px;">
+                        <td style="border:1px solid #000; text-align:center; padding:1px; ${darkStyle}">${r.id}</td>
+                        <td colspan="5" style="border:1px solid #000; padding:1px 3px; ${darkStyle}">${r.label}</td>
                         <td style="border:1px solid #000; ${darkStyle}"></td>
                     </tr>`;
                 } else {
-                    html += `<tr>
-                        <td style="border:1px solid #000; text-align:center; padding:5px;">${r.id}</td>
-                        <td style="border:1px solid #000; padding:5px;">${r.label}</td>
+                    html += `<tr style="height: 13px;">
+                        <td style="border:1px solid #000; text-align:center; padding:1px;">${r.id}</td>
+                        <td style="border:1px solid #000; padding:1px 3px;">${r.label}</td>
                         <td style="border:1px solid #000; text-align:center;">${r.sv !== "" ? fmt(r.sv) : ""}</td>
                         <td style="border:1px solid #000; text-align:center; background:#eee;">${r.sp ? r.sp + "%" : ""}</td>
                         <td style="border:1px solid #000; text-align:center;">${r.kv !== "" ? fmt(r.kv) : ""}</td>
                         <td style="border:1px solid #000; text-align:center; background:#eee;">${r.kp ? r.kp + "%" : ""}</td>
-                        <td style="border:1px solid #000; font-size:0.65rem; color:#000; padding:4px; text-align:left; line-height:1.2;">${r.note}</td>
+                        <td style="border:1px solid #000; font-size:6px; color:#000; padding:1px; text-align:left; line-height:1.0;">${r.note}</td>
                     </tr>`;
                 }
             });
