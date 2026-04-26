@@ -219,6 +219,33 @@
         .btn-primary:hover { background: #4338ca; }
         .btn-outline { background: white; border: 1px solid var(--border); color: var(--text-main); }
         .btn-outline:hover { background: #f9fafb; }
+        /* Official Reten Paper Styles */
+        .reten-official-paper {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            max-width: 210mm;
+            margin: 0 auto;
+            border: 1px solid #e2e8f0;
+        }
+        .reten-table-official th, .reten-table-official td {
+            border: 1px solid #000 !important;
+            padding: 4px 8px !important;
+            color: #000 !important;
+        }
+        @media print {
+            body * { visibility: hidden; }
+            .reten-official-paper, .reten-official-paper * { visibility: visible; }
+            .reten-official-paper {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                box-shadow: none;
+                border: none;
+                padding: 0 !important;
+            }
+            .no-print { display: none !important; }
+            @page { size: auto; margin: 10mm; }
+        }
     </style>
 </head>
 <body>
@@ -485,14 +512,14 @@
             </section>
 
             <section id="view-laporan" class="view" style="display: none;">
-                <div class="header-top">
+                <div class="header-top no-print">
                     <div class="page-info">
                         <h1>📊 Penjanaan Laporan Reten KKM</h1>
                         <p>Lampiran 4(a), 4(b) & 4(c) mengikut format rasmi</p>
                     </div>
                 </div>
 
-                <div class="controls">
+                <div class="controls no-print">
                     <div class="tab-nav" style="margin-bottom: 0;">
                         <button class="tab-btn active" id="btn-4a" onclick="switchReten('4a')">4(a) Asimtomatik</button>
                         <button class="tab-btn" id="btn-4b" onclick="switchReten('4b')">4(b) Bergejala</button>
@@ -501,35 +528,67 @@
                     <select id="filterMonthReport" class="btn btn-outline" onchange="renderRetenView()" style="min-width: 150px;">
                         <option value="">Semua Bulan (Kumulatif)</option>
                     </select>
-                    <button class="btn btn-primary" onclick="exportRetenPDF()" style="margin-left: auto;">
+                    <button class="btn btn-secondary" onclick="window.print()">
+                        <i data-lucide="printer"></i> Cetak Laporan
+                    </button>
+                    <button class="btn btn-primary" onclick="exportRetenPDF()" style="margin-left: 8px;">
                         <i data-lucide="download"></i> Export PDF
                     </button>
                 </div>
 
-                <div id="reten-content" class="card" style="padding:0; overflow-x:auto;">
-                    <div style="padding: 24px; text-align: center; border-bottom: 2px solid #eee;">
-                        <h2 id="retenTitle" style="font-size: 1rem; margin-bottom: 5px; font-weight:800;">FORMAT RETEN 4(a)(iii)</h2>
-                        <p id="retenSubtitle" style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: #64748b;"></p>
+                <div id="reten-paper" class="card reten-official-paper" style="padding: 40px; background: white; color: black; font-family: 'Inter', sans-serif;">
+                    <!-- Official Header -->
+                    <div style="text-align: center; margin-bottom: 20px; position: relative;">
+                        <div style="position: absolute; top: 0; right: 0; text-align: right; font-size: 0.65rem; color: #555;">
+                            <div id="retenRefCode" style="font-weight: bold;">spaCRCscreen /JKN/Pindaan3/2023</div>
+                            <div>Lampiran <span id="retenLampiranCode">4(a)(iii)</span></div>
+                        </div>
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Coat_of_arms_of_Malaysia.svg/200px-Coat_of_arms_of_Malaysia.svg.png" style="width: 60px; margin-bottom: 10px;">
+                        <div style="font-size: 0.7rem; font-weight: bold; margin-bottom: 2px;">Kementerian Kesihatan Malaysia</div>
+                        <div style="font-size: 0.9rem; font-weight: 800; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 4px 0; margin-top: 5px;">FORMAT RETEN</div>
+                        <div style="font-size: 0.8rem; font-weight: 700; margin-top: 4px;">PROGRAM SARINGAN DAN PENGESANAN AWAL<br>KANSER KOLOREKTAL</div>
                     </div>
-                    <table class="data-table" id="tableReten">
+
+                    <!-- Metadata Rows -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.75rem; margin-bottom: 20px;">
+                        <div>
+                            <div style="margin-bottom: 4px;"><strong>NEGERI :</strong> KEDAH</div>
+                            <div style="margin-bottom: 4px;"><strong>Laporan Bulan :</strong> <span id="metaMonth" style="border-bottom: 1px dotted #000; padding: 0 10px;">JAN</span> &nbsp;&nbsp; <strong>Tahun :</strong> <span style="border-bottom: 1px dotted #000; padding: 0 10px;">2026</span></div>
+                            <div style="margin-bottom: 4px;"><strong>Bilangan klinik kesihatan yang terlibat di seluruh Negeri :</strong> <span id="metaKKCount" style="border-bottom: 1px dotted #000; padding: 0 10px;">-</span></div>
+                        </div>
+                        <div style="padding-left: 20px;">
+                            <div style="margin-bottom: 4px; visibility: hidden;">Spacer</div>
+                            <div style="margin-bottom: 4px;"><strong>Bil Doktor/klinik :</strong> <span style="border-bottom: 1px dotted #000; padding: 0 10px;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> &nbsp;&nbsp; <strong>Bil FMS/Klinik :</strong> <span style="border-bottom: 1px dotted #000; padding: 0 10px;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></div>
+                        </div>
+                    </div>
+
+                    <div style="background: #dcfce7; padding: 8px; border: 1px solid #000; border-bottom: none; text-align: center; font-size: 0.75rem; font-weight: 800; text-transform: uppercase;">
+                        KUMPULAN SASAR : <span id="retenFullTitle"></span>
+                    </div>
+
+                    <table class="reten-table-official" style="width: 100%; border-collapse: collapse; border: 1px solid #000; font-size: 0.75rem;">
                         <thead>
-                            <tr>
-                                <th rowspan="2" style="width: 40px; text-align:center;">BIL</th>
-                                <th rowspan="2">PERKARA</th>
-                                <th colspan="2" style="text-align: center; background: #f8fafc; border-bottom:1px solid #e2e8f0;">BULAN SEMASA</th>
-                                <th colspan="2" style="text-align: center; background: #eff6ff; border-bottom:1px solid #e2e8f0;">KUMULATIF (YTD)</th>
-                            </tr>
-                            <tr>
-                                <th style="text-align: center; width: 80px; background: #f8fafc;">BIL</th>
-                                <th style="text-align: center; width: 80px; background: #f8fafc;">%</th>
-                                <th style="text-align: center; width: 80px; background: #eff6ff;">BIL</th>
-                                <th style="text-align: center; width: 80px; background: #eff6ff;">%</th>
+                            <tr style="background: #fff; text-align: center;">
+                                <th style="border: 1px solid #000; width: 40px; padding: 5px;">BIL</th>
+                                <th style="border: 1px solid #000; padding: 5px;">PERKARA</th>
+                                <th style="border: 1px solid #000; width: 70px; padding: 5px;">JUMLAH SEMASA</th>
+                                <th style="border: 1px solid #000; width: 70px; padding: 5px;">PERATUS SEMASA</th>
+                                <th style="border: 1px solid #000; width: 70px; padding: 5px;">JUMLAH KUMULATIF</th>
+                                <th style="border: 1px solid #000; width: 70px; padding: 5px;">PERATUS KUMULATIF</th>
+                                <th style="border: 1px solid #000; width: 140px; padding: 5px;">CATATAN</th>
                             </tr>
                         </thead>
                         <tbody id="retenBody">
-                            <!-- Data dynamically injected -->
+                            <!-- Rows -->
                         </tbody>
                     </table>
+
+                    <!-- Footer Notes -->
+                    <div style="margin-top: 15px; font-size: 0.65rem; line-height: 1.4;">
+                        <p><strong>Nota 1. Maklumkan jumlah saringan ulangan</strong></p>
+                        <p><strong>2. Lampirkan senarai KK yang menjalankan Saringan dan Pengesanan Awal Kolorektal</strong></p>
+                        <p><strong>3. Lampirkan maklumat HPE dan staging bagi kes-kes disahkan kanser kolorektal</strong></p>
+                    </div>
                 </div>
             </section>
 
@@ -1270,6 +1329,9 @@
             const dbSemasa = baseDb.filter(r => r[DB_COL.BULAN] === (mFilter || monthsOrdered[selectedIdx]));
             const dbKumulatif = baseDb.filter(r => cumulativeMonths.includes(r[DB_COL.BULAN]));
 
+            document.getElementById('metaMonth').innerText = mFilter || monthsOrdered[selectedIdx];
+            document.getElementById('metaKKCount').innerText = [...new Set(baseDb.map(r => r[DB_COL.KK]))].length;
+
             const getSubset = (data, type) => {
                 if (type === '4a') return data.filter(r => r[DB_COL.GEJALA] !== 'YA' && r[DB_COL.RISIKO] !== 'YA');
                 if (type === '4b') return data.filter(r => r[DB_COL.GEJALA] === 'YA');
@@ -1285,94 +1347,95 @@
                 const pos = data.filter(r => (r[DB_COL.POS_LAB] || '').toUpperCase() === 'YA' || (r[DB_COL.POS_SELF] || '').toUpperCase() === 'YA').length;
                 const setuju = data.filter(r => (r[DB_COL.RUJUK_GASTRO] || '').toUpperCase() === 'YA').length;
                 const enggan = data.filter(r => (r[DB_COL.ENGGAN_RUJUK] || '').toUpperCase() === 'YA').length;
+                const rujukanDiberi = setuju; 
                 const hadirTca = data.filter(r => (r[25] || '').toUpperCase().includes('HADIR')).length;
                 const cicirTca = data.filter(r => (r[25] || '').toUpperCase().includes('TIDAK HADIR')).length;
                 const belumTca = data.filter(r => (r[25] || '').toUpperCase().includes('BELUM SAMPAI')).length;
+                
                 const scopeHadir = data.filter(r => (r[DB_COL.SCOPE] || '').toUpperCase().includes('HADIR')).length;
                 const scopeNormal = data.filter(r => (r[DB_COL.SCOPE_CAT] || '').toUpperCase().includes('NORMAL')).length;
                 const scopePolyps = data.filter(r => (r[DB_COL.SCOPE_CAT] || '').toUpperCase().includes('POLYPS')).length;
                 const scopeKanser = data.filter(r => (r[DB_COL.SCOPE_CAT] || '').toUpperCase().includes('KANSER')).length;
                 const scopeLain = data.filter(r => (r[DB_COL.SCOPE_CAT] || '').toUpperCase().includes('LAIN-LAIN')).length;
                 const scopeBelumRes = data.filter(r => (r[DB_COL.SCOPE] || '').toUpperCase().includes('HADIR') && (!(r[DB_COL.SCOPE_CAT]) || (r[DB_COL.SCOPE_CAT] || '').toUpperCase().includes('BELUM'))).length;
+
                 const scopeTidakPerlu = data.filter(r => (r[DB_COL.SCOPE] || '').toUpperCase().includes('TIDAK PERLU')).length;
                 const scopeCicir = data.filter(r => (r[DB_COL.SCOPE] || '').toUpperCase().includes('CICIR')).length;
                 const scopeEnggan = data.filter(r => (r[DB_COL.SCOPE] || '').toUpperCase().includes('REFUSED')).length;
                 const scopeBelum = data.filter(r => (r[DB_COL.SCOPE] || '').toUpperCase().includes('BELUM DIJALANKAN')).length;
 
-                return { total, pos, setuju, enggan, hadirTca, cicirTca, belumTca, scopeHadir, scopeNormal, scopePolyps, scopeKanser, scopeLain, scopeBelumRes, scopeTidakPerlu, scopeCicir, scopeEnggan, scopeBelum };
+                return { total, pos, setuju, enggan, rujukanDiberi, hadirTca, cicirTca, belumTca, scopeHadir, scopeNormal, scopePolyps, scopeKanser, scopeLain, scopeBelumRes, scopeTidakPerlu, scopeCicir, scopeEnggan, scopeBelum };
             };
 
             const s = calc(sData), k = calc(kData);
-            const subs = { '4a': "KUMPULAN SASAR (SARINGAN): LELAKI DAN WANITA BERUMUR 50-75 TAHUN TANPA GEJALA", '4b': "KUMPULAN SASAR: LELAKI DAN WANITA (≥ 18 TAHUN) DENGAN TANDA DAN GEJALA", '4c': "KUMPULAN SASAR: LELAKI DAN WANITA BERISIKO TINGGI ATAU SEDERHANA" };
-            document.getElementById('retenTitle').innerText = `FORMAT RETEN 4(${currentRetenType.toUpperCase()})(iii)`;
-            document.getElementById('retenSubtitle').innerText = subs[currentRetenType];
+            
+            const titles = { 
+                '4a': "LELAKI DAN WANITA BERUMUR 50-75 TAHUN TANPA MENGALAMI SEBARANG GEJALA", 
+                '4b': "LELAKI DAN WANITA (BERUMUR ≥ 18 TAHUN) YANG MENGALAMI TANDA DAN GEJALA", 
+                '4c': "LELAKI DAN WANITA BERISIKO TINGGI ATAU SEDERHANA" 
+            };
+            const refCodes = { '4a': 'spaCRCscreen /JKN/Pindaan3/2023', '4b': 'spaCRCgejala /JKN/Pindaan3/2023', '4c': 'spaCRCberisiko /JKN/Pindaan3/2023' };
+            
+            document.getElementById('retenLampiranCode').innerText = `${currentRetenType.toLowerCase()}(iii)`;
+            document.getElementById('retenRefCode').innerText = refCodes[currentRetenType];
+            document.getElementById('retenFullTitle').innerText = titles[currentRetenType];
 
             const pct = (n, d) => d > 0 ? ((n/d)*100).toFixed(1) : "0.0";
+            const denoPos = currentRetenType === '4a' ? "Jumlah Kumpulan Sasar Disaring" : "Jumlah dikesan mengalami gejala";
+            const denoRujuk = currentRetenType === '4a' ? "Jumlah positif iFOBT" : "Jumlah dikesan bergejala";
+            
             const rows = [
-                { id:"1", label:"Jumlah klien disaring / dikesan", sv:s.total, sp:"-", kv:k.total, kp:"-", d: "" },
-                { id:"2", label:"Klien positif (iFOBT)", sv:s.pos, sp:pct(s.pos, s.total), kv:k.pos, kp:pct(k.pos, k.total), d:"Sasaran Disaring" },
-                { id:"3", label:"Klien setuju dirujuk ke SOPD/Gastro", sv:s.setuju, sp:pct(s.setuju, (currentRetenType==='4a'?s.pos:s.total)), kv:k.setuju, kp:pct(k.setuju, (currentRetenType==='4a'?k.pos:k.total)), d: (currentRetenType==='4a'?"Positif iFOBT":"Jumlah Gejala") },
-                { id:"4", label:"Klien enggan dirujuk ke SOPD/Gastro", sv:s.enggan, sp:pct(s.enggan, (currentRetenType==='4a'?s.pos:s.total)), kv:k.enggan, kp:pct(k.enggan, (currentRetenType==='4a'?k.pos:k.total)), d: (currentRetenType==='4a'?"Positif iFOBT":"Jumlah Gejala") },
-                { id:"5", label:"Surat rujukan hospital diberi (KPI KKM)", sv:s.setuju, sp:pct(s.setuju, (currentRetenType==='4a'?s.pos:s.total)), kv:k.setuju, kp:pct(k.setuju, (currentRetenType==='4a'?k.pos:k.total)), d: (currentRetenType==='4a'?"Positif iFOBT":"Jumlah Gejala") },
-                { id:"6", label:"Klien hadir temujanji SOPD/Gastro", sv:s.hadirTca, sp:pct(s.hadirTca, s.setuju), kv:k.hadirTca, kp:pct(k.hadirTca, k.setuju), d: "Setuju Rujuk" },
-                { id:"7", label:"Klien tidak hadir temujanji (cicir/default)", sv:s.cicirTca, sp:pct(s.cicirTca, s.setuju), kv:k.cicirTca, kp:pct(k.cicirTca, k.setuju), d: "Setuju Rujuk" },
-                { id:"8", label:"Klien belum sampai temujanji", sv:s.belumTca, sp:pct(s.belumTca, s.setuju), kv:k.belumTca, kp:pct(k.belumTca, k.setuju), d: "Setuju Rujuk" },
-                { id:"9", label:"<strong>Klien tidak menjalani kolonoskopi:</strong>", sv:"", sp:"", kv:"", kp:"", d:"" },
-                { id:"9.1", label:"&nbsp;&nbsp;9.1 Kolonoskopi tidak perlu (Pakar)", sv:s.scopeTidakPerlu, sp:pct(s.scopeTidakPerlu, s.setuju), kv:k.scopeTidakPerlu, kp:pct(k.scopeTidakPerlu, k.setuju), d:"Setuju Rujuk" },
-                { id:"9.2", label:"&nbsp;&nbsp;9.2 Cicir (default)", sv:s.scopeCicir, sp:pct(s.scopeCicir, s.setuju), kv:k.scopeCicir, kp:pct(k.scopeCicir, k.setuju), d:"Setuju Rujuk" },
-                { id:"9.3", label:"&nbsp;&nbsp;9.3 Enggan kolonoskopi (defaulted)", sv:s.scopeEnggan, sp:pct(s.scopeEnggan, s.setuju), kv:k.scopeEnggan, kp:pct(k.scopeEnggan, k.setuju), d:"Setuju Rujuk" },
-                { id:"10", label:"Kolonoskopi belum dijalankan", sv:s.scopeBelum, sp:pct(s.scopeBelum, s.setuju), kv:k.scopeBelum, kp:pct(k.scopeBelum, k.setuju), d:"Setuju Rujuk" },
-                { id:"11", label:"<strong>Kes sebenar menjalani kolonoskopi</strong>", sv:s.scopeHadir, sp:pct(s.scopeHadir, s.setuju), kv:k.scopeHadir, kp:pct(k.scopeHadir, k.setuju), d:"Setuju Rujuk" },
-                { id:"12", label:"<strong>Keputusan Kolonoskopi:</strong>", sv:"", sp:"", kv:"", kp:"", d:"" },
-                { id:"12.1", label:"&nbsp;&nbsp;12.1 Kanser kolorektal", sv:s.scopeKanser, sp:pct(s.scopeKanser, s.scopeHadir), kv:k.scopeKanser, kp:pct(k.scopeKanser, k.scopeHadir), d:"Hadir Scope" },
-                { id:"12.2", label:"&nbsp;&nbsp;12.2 Colonic Polyps", sv:s.scopePolyps, sp:pct(s.scopePolyps, s.scopeHadir), kv:k.scopePolyps, kp:pct(k.scopePolyps, k.scopeHadir), d:"Hadir Scope" },
-                { id:"12.3", label:"&nbsp;&nbsp;12.3 Normal", sv:s.scopeNormal, sp:pct(s.scopeNormal, s.scopeHadir), kv:k.scopeNormal, kp:pct(k.scopeNormal, k.scopeHadir), d:"Hadir Scope" },
-                { id:"12.4", label:"&nbsp;&nbsp;12.4 Lain-lain diagnosa*", sv:s.scopeLain, sp:pct(s.scopeLain, s.scopeHadir), kv:k.scopeLain, kp:pct(k.scopeLain, k.scopeHadir), d:"Hadir Scope" },
-                { id:"12.5", label:"&nbsp;&nbsp;12.5 Keputusan belum diperolehi", sv:s.scopeBelumRes, sp:pct(s.scopeBelumRes, s.scopeHadir), kv:k.scopeBelumRes, kp:pct(k.scopeBelumRes, k.scopeHadir), d:"Hadir Scope" },
-                { id:"12.6", label:"&nbsp;&nbsp;12.6 Jumlah keputusan diperolehi", sv:(s.scopeHadir-s.scopeBelumRes), sp:pct((s.scopeHadir-s.scopeBelumRes), s.scopeHadir), kv:(k.scopeHadir-k.scopeBelumRes), kp:pct((k.scopeHadir-k.scopeBelumRes), k.scopeHadir), d:"Hadir Scope" }
+                { id:"1", label:"Jumlah klien disaring", sv:s.total, sp:"", kv:k.total, kp:"", note: "", isHeader: false },
+                { id:"2", label:"Klien positif (iFOBT)", sv:s.pos, sp:pct(s.pos, s.total), kv:k.pos, kp:pct(k.pos, k.total), note: "Denominator: " + denoPos },
+                { id:"3", label:"Klien setuju dirujuk ke SOPD/Gastro untuk kolonoskopi", sv:s.setuju, sp:pct(s.setuju, (currentRetenType==='4a'?s.pos:s.total)), kv:k.setuju, kp:pct(k.setuju, (currentRetenType==='4a'?k.pos:k.total)), note: "Denominator: " + denoRujuk },
+                { id:"4", label:"Klien enggan dirujuk ke SOPD/Gastro untuk kolonoskopi", sv:s.enggan, sp:pct(s.enggan, (currentRetenType==='4a'?s.pos:s.total)), kv:k.enggan, kp:pct(k.enggan, (currentRetenType==='4a'?k.pos:k.total)), note: "Denominator: " + denoRujuk },
+                { id:"5", label:"Surat rujukan ke hospital diberi kepada klien (KPI KKM)", sv:s.setuju, sp:pct(s.setuju, (currentRetenType==='4a'?s.pos:s.total)), kv:k.setuju, kp:pct(k.setuju, (currentRetenType==='4a'?k.pos:k.total)), note: "Denominator: " + denoRujuk },
+                { id:"6", label:"Klien hadir temujanji SOPD/Gastro", sv:s.hadirTca, sp:pct(s.hadirTca, s.setuju), kv:k.hadirTca, kp:pct(k.hadirTca, k.setuju), note: "Denominator: Kes setuju dirujuk" },
+                { id:"7", label:"Klien tidak hadir temujanji SOPD/Gastro (cicir/default)", sv:s.cicirTca, sp:pct(s.cicirTca, s.setuju), kv:k.cicirTca, kp:pct(k.cicirTca, k.setuju), note: "Denominator: Kes setuju dirujuk" },
+                { id:"8", label:"Klien belum sampai temujanji", sv:s.belumTca, sp:pct(s.belumTca, s.setuju), kv:k.belumTca, kp:pct(k.belumTca, k.setuju), note: "Denominator: Kes setuju dirujuk" },
+                { id:"9", label:"Klien tidak menjalani kolonoskopi", sv:"", sp:"", kv:"", kp:"", note:"", isDark: true },
+                { id:"9.1", label:"&nbsp;&nbsp;&nbsp;9.1 Kolonoskopi tidak perlu (Pakar)", sv:s.scopeTidakPerlu, sp:pct(s.scopeTidakPerlu, s.setuju), kv:k.scopeTidakPerlu, kp:pct(k.scopeTidakPerlu, k.setuju), note:"Denominator: Kes setuju dirujuk" },
+                { id:"9.2", label:"&nbsp;&nbsp;&nbsp;9.2 Cicir (default)", sv:s.scopeCicir, sp:pct(s.scopeCicir, s.setuju), kv:k.scopeCicir, kp:pct(k.scopeCicir, k.setuju), note:"Denominator: Kes setuju dirujuk" },
+                { id:"9.3", label:"&nbsp;&nbsp;&nbsp;9.3 Enggan kolonoskopi (defaulted)", sv:s.scopeEnggan, sp:pct(s.scopeEnggan, s.setuju), kv:k.scopeEnggan, kp:pct(k.scopeEnggan, k.setuju), note:"Denominator: Kes setuju dirujuk" },
+                { id:"10", label:"Kolonoskopi belum dijalankan", sv:s.scopeBelum, sp:pct(s.scopeBelum, s.setuju), kv:k.scopeBelum, kp:pct(k.scopeBelum, k.setuju), note:"Denominator: Kes setuju dirujuk" },
+                { id:"11", label:"Kes sebenar menjalani kolonoskopi", sv:s.scopeHadir, sp:pct(s.scopeHadir, s.setuju), kv:k.scopeHadir, kp:pct(k.scopeHadir, k.setuju), note:"Denominator: Kes setuju dirujuk" },
+                { id:"12", label:"Keputusan kolonoskopi", sv:"", sp:"", kv:"", kp:"", note:"", isDark: true },
+                { id:"12.1", label:"&nbsp;&nbsp;&nbsp;12.1 Kanser kolorektal", sv:s.scopeKanser, sp:pct(s.scopeKanser, s.scopeHadir), kv:k.scopeKanser, kp:pct(k.scopeKanser, k.scopeHadir), note:"Denominator: Jm sebenar kolonoskopi" },
+                { id:"12.2", label:"&nbsp;&nbsp;&nbsp;12.2 Colonic Polyps", sv:s.scopePolyps, sp:pct(s.scopePolyps, s.scopeHadir), kv:k.scopePolyps, kp:pct(k.scopePolyps, k.scopeHadir), note:"Denominator: Jm sebenar kolonoskopi" },
+                { id:"12.3", label:"&nbsp;&nbsp;&nbsp;12.3 Normal", sv:s.scopeNormal, sp:pct(s.scopeNormal, s.scopeHadir), kv:k.scopeNormal, kp:pct(k.scopeNormal, k.scopeHadir), note:"Denominator: Jm sebenar kolonoskopi" },
+                { id:"12.4", label:"&nbsp;&nbsp;&nbsp;12.4 Lain-lain diagnosa*", sv:s.scopeLain, sp:pct(s.scopeLain, s.scopeHadir), kv:k.scopeLain, kp:pct(k.scopeLain, k.scopeHadir), note:"Denominator: Jm sebenar kolonoskopi" },
+                { id:"12.5", label:"&nbsp;&nbsp;&nbsp;12.5 Keputusan belum diperolehi", sv:s.scopeBelumRes, sp:pct(s.scopeBelumRes, s.scopeHadir), kv:k.scopeBelumRes, kp:pct(k.scopeBelumRes, k.scopeHadir), note:"Denominator: Jm sebenar kolonoskopi" },
+                { id:"12.6", label:"&nbsp;&nbsp;&nbsp;12.6 Jumlah keputusan diperoleh", sv:(s.scopeHadir-s.scopeBelumRes), sp:pct((s.scopeHadir-s.scopeBelumRes), s.scopeHadir), kv:(k.scopeHadir-k.scopeBelumRes), kp:pct((k.scopeHadir-k.scopeBelumRes), k.scopeHadir), note:"Denominator: Jm sebenar kolonoskopi" },
+                { id:"13", label:"Lain-lain maklumat:<br>Bil. Aktiviti Promosi Kesedaran Kanser", sv:"-", sp:"", kv:"-", kp:"", note: "" }
             ];
 
             let html = "";
             rows.forEach(r => {
-                html += `<tr>
-                    <td style="text-align:center;">${r.id}</td>
-                    <td>${r.label}</td>
-                    <td style="text-align:center;">${fmt(r.sv)}</td>
-                    <td style="text-align:center; font-weight:700;">${r.sp !== "-" ? r.sp + "%" : "-"}</td>
-                    <td style="text-align:center;">${fmt(r.kv)}</td>
-                    <td style="text-align:center; font-weight:700;">${r.kp !== "-" ? r.kp + "%" : "-"}</td>
-                </tr>`;
+                if(r.isDark) {
+                    html += `<tr style="background:#000; color:#fff; font-weight:bold;">
+                        <td style="border:1px solid #000; text-align:center;">${r.id}</td>
+                        <td colspan="5" style="border:1px solid #000; padding:5px;">${r.label}</td>
+                        <td style="border:1px solid #000;"></td>
+                    </tr>`;
+                } else {
+                    html += `<tr>
+                        <td style="border:1px solid #000; text-align:center; padding:4px;">${r.id}</td>
+                        <td style="border:1px solid #000; padding:4px;">${r.label}</td>
+                        <td style="border:1px solid #000; text-align:center; padding:4px;">${r.sv !== "" ? fmt(r.sv) : ""}</td>
+                        <td style="border:1px solid #000; text-align:center; padding:4px;">${r.sp ? r.sp + "%" : ""}</td>
+                        <td style="border:1px solid #000; text-align:center; padding:4px;">${r.kv !== "" ? fmt(r.kv) : ""}</td>
+                        <td style="border:1px solid #000; text-align:center; padding:4px;">${r.kp ? r.kp + "%" : ""}</td>
+                        <td style="border:1px solid #000; font-size:0.6rem; color:#666; padding:4px; text-align:center;">${r.note}</td>
+                    </tr>`;
+                }
             });
             document.getElementById('retenBody').innerHTML = html;
         }
 
         async function exportRetenPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('p', 'mm', 'a4');
-            const pkd = document.getElementById('filterDaerah').value || "NEGERI KEDAH";
-            const month = document.getElementById('filterMonthReport').value || "TAHUNAN";
-            
-            doc.setFontSize(10);
-            doc.text("FORMAT RETEN PROGRAM SARINGAN KANSER KOLOREKTAL KKM", 105, 10, { align: 'center' });
-            doc.setFontSize(9);
-            doc.text(`DAERAH: ${pkd} | BULAN: ${month} (2026)`, 105, 16, { align: 'center' });
-            doc.text(document.getElementById('retenTitle').innerText, 105, 22, { align: 'center' });
-
-            doc.autoTable({
-                html: '#tableReten',
-                startY: 28,
-                theme: 'grid',
-                styles: { fontSize: 7, cellPadding: 2 },
-                headStyles: { fillColor: [30, 64, 175], textColor: 255, halign: 'center' },
-                columnStyles: {
-                    0: { halign: 'center', cellWidth: 10 },
-                    2: { halign: 'center' },
-                    3: { halign: 'center', fontStyle: 'bold' },
-                    4: { halign: 'center' },
-                    5: { halign: 'center', fontStyle: 'bold' }
-                }
-            });
-            doc.save(`Reten_${currentRetenType}_${pkd}_${month}.pdf`);
+            const el = document.getElementById('reten-paper');
+            // We use direct browser printing for high fidelity, but if user wants PDF file:
+            window.print();
         }
 
         function num(v) { return v ? parseFloat(String(v).split(',').join('').replace(/[^0-9.\-]/g, '')) || 0 : 0; }
