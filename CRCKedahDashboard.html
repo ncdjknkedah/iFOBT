@@ -519,20 +519,30 @@
                     </div>
                 </div>
 
-                <div class="controls no-print">
+                <div class="controls no-print" style="margin-bottom: 24px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
                     <div class="tab-nav" style="margin-bottom: 0;">
                         <button class="tab-btn active" id="btn-4a" onclick="switchReten('4a')">4(a) Asimtomatik</button>
                         <button class="tab-btn" id="btn-4b" onclick="switchReten('4b')">4(b) Bergejala</button>
                         <button class="tab-btn" id="btn-4c" onclick="switchReten('4c')">4(c) Berisiko</button>
                     </div>
-                    <select id="filterMonthReport" class="btn btn-outline" onchange="renderRetenView()" style="min-width: 150px;">
-                        <option value="">Semua Bulan (Kumulatif)</option>
+                    
+                    <select id="filterMonthReport" class="btn btn-outline" onchange="renderRetenView()" style="min-width: 120px;">
+                        <option value="">Semua Bulan</option>
                     </select>
+
+                    <select id="filterPKDReport" class="btn btn-outline" onchange="populateKKFilterReport(); renderRetenView()" style="min-width: 150px;">
+                        <option value="">Seluruh Kedah</option>
+                    </select>
+
+                    <select id="filterKKReport" class="btn btn-outline" onchange="renderRetenView()" style="min-width: 150px;">
+                        <option value="">Semua Klinik</option>
+                    </select>
+
                     <button class="btn btn-secondary" onclick="window.print()">
-                        <i data-lucide="printer"></i> Cetak Laporan
+                        <i data-lucide="printer"></i> Cetak
                     </button>
-                    <button class="btn btn-primary" onclick="exportRetenPDF()" style="margin-left: 8px;">
-                        <i data-lucide="download"></i> Export PDF
+                    <button class="btn btn-primary" onclick="exportRetenPDF()">
+                        <i data-lucide="download"></i> PDF
                     </button>
                 </div>
 
@@ -565,7 +575,7 @@
                     <div style="display: flex; flex-wrap: wrap; gap: 8px; font-size: 8.5px; margin-bottom: 4px;">
                         <div style="flex: 1; display:flex; gap:3px;">
                             <strong>NEGERI :</strong>
-                            <span style="flex:1; border-bottom: 1px dotted #000;">KEDAH</span>
+                            <span id="metaStateDisplay" style="flex:1; border-bottom: 1px dotted #000;">KEDAH</span>
                         </div>
                         <div style="width: 140px; display:flex; gap:3px;">
                             <strong>Laporan Bulan :</strong>
@@ -1154,9 +1164,24 @@
 
             const mSlct = document.getElementById('filterMonthReport');
             if(mSlct) {
-                mSlct.innerHTML = '<option value="">Semua Bulan (Terkumpul)</option>';
+                mSlct.innerHTML = '<option value="">Semua Bulan</option>';
                 months.sort().forEach(m => mSlct.innerHTML += `<option value="${m}">${m}</option>`);
             }
+
+            // New Report PKD Filter
+            const rPkd = document.getElementById('filterPKDReport');
+            if(rPkd) {
+                rPkd.innerHTML = '<option value="">Seluruh Kedah</option>';
+                pkds.forEach(p => rPkd.innerHTML += `<option value="${p}">${p}</option>`);
+            }
+        }
+
+        function populateKKFilterReport() {
+            const pkdFilter = document.getElementById('filterPKDReport').value;
+            const kks = [...new Set(appState.databaseRaw.filter(r => !pkdFilter || r[DB_COL.PKD] === pkdFilter).map(r => r[DB_COL.KK]))].filter(Boolean).sort();
+            const slct = document.getElementById('filterKKReport');
+            slct.innerHTML = '<option value="">Semua Klinik</option>';
+            kks.forEach(k => slct.innerHTML += `<option value="${k}">${k}</option>`);
         }
 
         function updateKKFilter() {
@@ -1348,17 +1373,23 @@
             if (selectedIdx === -1) selectedIdx = monthsOrdered.length - 1; 
             const cumulativeMonths = monthsOrdered.slice(0, selectedIdx + 1);
 
-            const pkdF = document.getElementById('filterDaerah').value;
-            const kkF = document.getElementById('filterKK').value;
+            const pkdF = document.getElementById('filterPKDReport').value;
+            const kkF = document.getElementById('filterKKReport').value;
+
+            // Update Header Display
+            let negeriText = "KEDAH";
+            if(pkdF) negeriText += " / " + pkdF;
+            if(kkF) negeriText += " (" + kkF + ")";
+            document.getElementById('metaStateDisplay').innerText = negeriText;
 
             let baseDb = [...appState.databaseRaw];
             if (pkdF) baseDb = baseDb.filter(r => r[DB_COL.PKD] === pkdF);
             if (kkF) baseDb = baseDb.filter(r => r[DB_COL.KK] === kkF);
 
-            const dbSemasa = baseDb.filter(r => r[DB_COL.BULAN] === (mFilter || monthsOrdered[selectedIdx]));
+            const dbSemasa = mFilter ? baseDb.filter(r => r[DB_COL.BULAN] === mFilter) : baseDb;
             const dbKumulatif = baseDb.filter(r => cumulativeMonths.includes(r[DB_COL.BULAN]));
 
-            document.getElementById('metaMonth').innerText = mFilter || monthsOrdered[selectedIdx];
+            document.getElementById('metaMonth').innerText = mFilter || "JAN-DIS";
             document.getElementById('metaKKCount').innerText = [...new Set(baseDb.map(r => r[DB_COL.KK]))].length;
 
             const getSubset = (data, type) => {
