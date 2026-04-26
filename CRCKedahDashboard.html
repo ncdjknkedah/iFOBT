@@ -391,8 +391,15 @@
                     </div>
                 </div>
 
+                <!-- Row 4: Regional Comparison Bar Chart -->
+                <div class="card" style="margin-top: 24px; padding: 20px;">
+                    <h3 style="font-size: 0.9rem; margin-bottom: 5px;">📍 Perbandingan Prestasi & Pencapaian Daerah (%)</h3>
+                    <p style="font-size: 0.65rem; color: var(--text-muted); margin-bottom:15px;">Peratusan pencapaian berbanding sasaran dan kadar rujukan klinikal</p>
+                    <div style="height: 300px;"><canvas id="chartRegionalCompare"></canvas></div>
+                </div>
+
                 <div class="stats-grid" style="margin-top:24px;">
-                    <!-- Row 4: Detection & Results -->
+                    <!-- Row 5: Detection & Results -->
                     <div class="card" style="grid-column: span 1; padding: 15px; margin-bottom:0;">
                         <h3 style="font-size: 0.85rem; margin-bottom: 5px;">📍 Hasil Kolonoskopi (Pai)</h3>
                         <p style="font-size: 0.65rem; color: var(--text-muted); margin-bottom:10px;">% mengikut jumlah penemuan</p>
@@ -804,12 +811,15 @@
             // 2. iFOBT Positiviti
             const resScreen = db.filter(r => (r[16] && r[16].trim() !== "") || (r[17] && r[17].trim() !== ""));
             const posLab = resScreen.filter(r => (r[18] || '').toUpperCase() === 'YA').length;
-            const posRate = resScreen.length > 0 ? ((posLab/resScreen.length)*100).toFixed(1) : "0";
+            const posSelf = resScreen.filter(r => (r[21] || '').toUpperCase() === 'YA').length;
+            const totalPosiFOBT = posLab + posSelf;
+            
+            // Formula Baru: Numerator (YA S & V) / Denom (Saringan Asimtomatik)
+            const posRate = scrAsimtomatik > 0 ? ((totalPosiFOBT/scrAsimtomatik)*100).toFixed(1) : "0";
             document.getElementById('over-pos-rate').innerText = posRate + "%";
-            document.getElementById('over-pos-meta').innerHTML = `Bil: ${posLab}/${resScreen.length}`;
+            document.getElementById('over-pos-meta').innerHTML = `Bil Posi: ${totalPosiFOBT} / Denom Asim: ${scrAsimtomatik}`;
 
             // 3. Rujukan & Uptake
-            const totalPosiFOBT = db.filter(r => (r[18] || '').toUpperCase() === 'YA' || (r[21] || '').toUpperCase() === 'YA').length;
             const rujukGastro = db.filter(r => (r[23] || '').toUpperCase() === 'YA').length;
             
             // Denominator: Positif iFOBT + Bergejala + Berisiko
@@ -854,6 +864,55 @@
                     scales: { 
                         y: { display: false, suggestedMax: Math.max(...Object.values(catData)) * 1.2 }, 
                         x: { grid: { display:false } } 
+                    }
+                }
+            });
+
+            // 4. Regional Comparison Chart Logic
+            const pkdList = pkdF ? [pkdF] : [...new Set(db.map(r => r[DB_COL.PKD]))].filter(Boolean).sort();
+            const regionalData = { labels: pkdList, scr1: [], scr2: [], ref: [] };
+
+            pkdList.forEach(daerah => {
+                const rDb = db.filter(r => r[DB_COL.PKD] === daerah);
+                const rScr1 = rDb.filter(r => (r[DB_COL.JENIS] || '').toUpperCase().includes('BARU')).length;
+                const rScr2 = rDb.filter(r => (r[DB_COL.JENIS] || '').toUpperCase().includes('ULANGAN')).length;
+                const rTarg1 = getTargetValue(TARGETS_1, daerah) || 1;
+                const rTarg2 = getTargetValue(TARGETS_2, daerah) || 1;
+                
+                const rPos = rDb.filter(r => (r[18] || '').toUpperCase() === 'YA' || (r[21] || '').toUpperCase() === 'YA').length;
+                const rBerg = rDb.filter(r => r[DB_COL.GEJALA] === 'YA').length;
+                const rRisk = rDb.filter(r => r[DB_COL.RISIKO] === 'YA').length;
+                const rRujuk = rDb.filter(r => (r[23] || '').toUpperCase() === 'YA').length;
+                const rDenoRef = rPos + rBerg + rRisk;
+
+                regionalData.scr1.push(((rScr1/rTarg1)*100).toFixed(1));
+                regionalData.scr2.push(((rScr2/rTarg2)*100).toFixed(1));
+                regionalData.ref.push(rDenoRef > 0 ? ((rRujuk/rDenoRef)*100).toFixed(1) : 0);
+            });
+
+            if(appState.charts.regCompare) appState.charts.regCompare.destroy();
+            appState.charts.regCompare = new Chart(document.getElementById('chartRegionalCompare'), {
+                type: 'bar',
+                data: {
+                    labels: regionalData.labels,
+                    datasets: [
+                        { label: 'Pencapaian Scr 1 (%)', data: regionalData.scr1, backgroundColor: '#1e40af' },
+                        { label: 'Pencapaian Scr 2 (%)', data: regionalData.scr2, backgroundColor: '#8b5cf6' },
+                        { label: 'Kadar Rujukan Gastro (%)', data: regionalData.ref, backgroundColor: '#ec4899' }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top', labels: { boxWidth: 12, font: { size: 10 } } },
+                        datalabels: {
+                            anchor: 'end', align: 'top', font: { size: 9, weight: 'bold' },
+                            formatter: (v) => v + '%'
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, max: 120, title: { display: true, text: 'Peratus (%)' } },
+                        x: { grid: { display: false } }
                     }
                 }
             });
