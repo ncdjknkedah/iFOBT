@@ -487,27 +487,49 @@
             <section id="view-laporan" class="view" style="display: none;">
                 <div class="header-top">
                     <div class="page-info">
-                        <h1>📊 Penjanaan Laporan Reten</h1>
-                        <p>Pilih kategori laporan dan bulan untuk dianalisa</p>
+                        <h1>📊 Penjanaan Laporan Reten KKM</h1>
+                        <p>Lampiran 4(a), 4(b) & 4(c) mengikut format rasmi</p>
                     </div>
                 </div>
 
                 <div class="controls">
                     <div class="tab-nav" style="margin-bottom: 0;">
-                        <button class="tab-btn active" onclick="switchReten('4a')">Reten 4(a)</button>
-                        <button class="tab-btn" onclick="switchReten('4b')">Reten 4(b)</button>
-                        <button class="tab-btn" onclick="switchReten('4c')">Reten 4(c)</button>
+                        <button class="tab-btn active" id="btn-4a" onclick="switchReten('4a')">4(a) Asimtomatik</button>
+                        <button class="tab-btn" id="btn-4b" onclick="switchReten('4b')">4(b) Bergejala</button>
+                        <button class="tab-btn" id="btn-4c" onclick="switchReten('4c')">4(c) Berisiko</button>
                     </div>
                     <select id="filterMonthReport" class="btn btn-outline" onchange="renderRetenView()" style="min-width: 150px;">
-                        <option value="">Semua Bulan (Terkumpul)</option>
+                        <option value="">Semua Bulan (Kumulatif)</option>
                     </select>
-                    <button class="btn btn-primary" onclick="exportToPDF()" style="margin-left: auto;">
-                        <i data-lucide="download"></i> Muat Turun PDF
+                    <button class="btn btn-primary" onclick="exportRetenPDF()" style="margin-left: auto;">
+                        <i data-lucide="download"></i> Export PDF
                     </button>
                 </div>
 
-                <div id="reten-content" class="card">
-                    <!-- Reten Table Content -->
+                <div id="reten-content" class="card" style="padding:0; overflow-x:auto;">
+                    <div style="padding: 24px; text-align: center; border-bottom: 2px solid #eee;">
+                        <h2 id="retenTitle" style="font-size: 1rem; margin-bottom: 5px; font-weight:800;">FORMAT RETEN 4(a)(iii)</h2>
+                        <p id="retenSubtitle" style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: #64748b;"></p>
+                    </div>
+                    <table class="data-table" id="tableReten">
+                        <thead>
+                            <tr>
+                                <th rowspan="2" style="width: 40px; text-align:center;">BIL</th>
+                                <th rowspan="2">PERKARA</th>
+                                <th colspan="2" style="text-align: center; background: #f8fafc; border-bottom:1px solid #e2e8f0;">BULAN SEMASA</th>
+                                <th colspan="2" style="text-align: center; background: #eff6ff; border-bottom:1px solid #e2e8f0;">KUMULATIF (YTD)</th>
+                            </tr>
+                            <tr>
+                                <th style="text-align: center; width: 80px; background: #f8fafc;">BIL</th>
+                                <th style="text-align: center; width: 80px; background: #f8fafc;">%</th>
+                                <th style="text-align: center; width: 80px; background: #eff6ff;">BIL</th>
+                                <th style="text-align: center; width: 80px; background: #eff6ff;">%</th>
+                            </tr>
+                        </thead>
+                        <tbody id="retenBody">
+                            <!-- Data dynamically injected -->
+                        </tbody>
+                    </table>
                 </div>
             </section>
 
@@ -1218,48 +1240,139 @@
         // ==========================================
         // VIEW: LAPORAN (RETEN)
         // ==========================================
-        function switchReten(t) {
-            appState.activeReten = t;
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelector(`.tab-btn[onclick="switchReten('${t}')"]`).classList.add('active');
+        let currentRetenType = '4a';
+
+        function switchReten(type) {
+            currentRetenType = type;
+            document.querySelectorAll('#view-laporan .tab-btn').forEach(b => b.classList.remove('active'));
+            // Set active class
+            if(type==='4a') document.getElementById('btn-4a').classList.add('active');
+            if(type==='4b') document.getElementById('btn-4b').classList.add('active');
+            if(type==='4c') document.getElementById('btn-4c').classList.add('active');
             renderRetenView();
         }
 
         function renderRetenView() {
-            const t = appState.activeReten;
             const mFilter = document.getElementById('filterMonthReport').value;
-            let db = appState.databaseRaw;
+            const monthsOrdered = ["JAN", "FEB", "MAC", "APR", "MEI", "JUN", "JUL", "OGOS", "SEPT", "OKT", "NOV", "DIS"];
             
-            // Filter by month if selected
-            if(mFilter) db = db.filter(r => r[DB_COL.BULAN] === mFilter);
+            let selectedIdx = monthsOrdered.indexOf(mFilter);
+            if (selectedIdx === -1) selectedIdx = monthsOrdered.length - 1; 
+            const cumulativeMonths = monthsOrdered.slice(0, selectedIdx + 1);
 
-            let filtered = (t === '4a') ? db.filter(r => r[DB_COL.GEJALA] !== 'YA' && r[DB_COL.RISIKO] !== 'YA' && num(r[DB_COL.UMUR]) >= 50 && num(r[DB_COL.UMUR]) <= 75) :
-                           (t === '4b') ? db.filter(r => r[DB_COL.GEJALA] === 'YA') : db.filter(r => r[DB_COL.RISIKO] === 'YA');
+            const pkdF = document.getElementById('filterDaerah').value;
+            const kkF = document.getElementById('filterKK').value;
 
-            const sum = {};
-            filtered.forEach(r => {
-                const p = (r[DB_COL.PKD] || 'TIADA').trim();
-                if(!sum[p]) sum[p] = { total: 0, pos: 0, neg: 0, scope: 0 };
-                sum[p].total++;
-                if(r[DB_COL.POS_LAB] === 'YA' || r[DB_COL.POS_SELF] === 'YA') sum[p].pos++;
-                if(r[DB_COL.NEG_LAB] === 'YA' || r[DB_COL.NEG_SELF] === 'YA') sum[p].neg++;
-                if((r[DB_COL.SCOPE] || '').includes('HADIR')) sum[p].scope++;
+            let baseDb = [...appState.databaseRaw];
+            if (pkdF) baseDb = baseDb.filter(r => r[DB_COL.PKD] === pkdF);
+            if (kkF) baseDb = baseDb.filter(r => r[DB_COL.KK] === kkF);
+
+            const dbSemasa = baseDb.filter(r => r[DB_COL.BULAN] === (mFilter || monthsOrdered[selectedIdx]));
+            const dbKumulatif = baseDb.filter(r => cumulativeMonths.includes(r[DB_COL.BULAN]));
+
+            const getSubset = (data, type) => {
+                if (type === '4a') return data.filter(r => r[DB_COL.GEJALA] !== 'YA' && r[DB_COL.RISIKO] !== 'YA');
+                if (type === '4b') return data.filter(r => r[DB_COL.GEJALA] === 'YA');
+                if (type === '4c') return data.filter(r => r[DB_COL.RISIKO] === 'YA');
+                return [];
+            };
+
+            const sData = getSubset(dbSemasa, currentRetenType);
+            const kData = getSubset(dbKumulatif, currentRetenType);
+
+            const calc = (data) => {
+                const total = data.length;
+                const pos = data.filter(r => (r[DB_COL.POS_LAB] || '').toUpperCase() === 'YA' || (r[DB_COL.POS_SELF] || '').toUpperCase() === 'YA').length;
+                const setuju = data.filter(r => (r[DB_COL.RUJUK_GASTRO] || '').toUpperCase() === 'YA').length;
+                const enggan = data.filter(r => (r[DB_COL.ENGGAN_RUJUK] || '').toUpperCase() === 'YA').length;
+                const hadirTca = data.filter(r => (r[25] || '').toUpperCase().includes('HADIR')).length;
+                const cicirTca = data.filter(r => (r[25] || '').toUpperCase().includes('TIDAK HADIR')).length;
+                const belumTca = data.filter(r => (r[25] || '').toUpperCase().includes('BELUM SAMPAI')).length;
+                const scopeHadir = data.filter(r => (r[DB_COL.SCOPE] || '').toUpperCase().includes('HADIR')).length;
+                const scopeNormal = data.filter(r => (r[DB_COL.SCOPE_CAT] || '').toUpperCase().includes('NORMAL')).length;
+                const scopePolyps = data.filter(r => (r[DB_COL.SCOPE_CAT] || '').toUpperCase().includes('POLYPS')).length;
+                const scopeKanser = data.filter(r => (r[DB_COL.SCOPE_CAT] || '').toUpperCase().includes('KANSER')).length;
+                const scopeLain = data.filter(r => (r[DB_COL.SCOPE_CAT] || '').toUpperCase().includes('LAIN-LAIN')).length;
+                const scopeBelumRes = data.filter(r => (r[DB_COL.SCOPE] || '').toUpperCase().includes('HADIR') && (!(r[DB_COL.SCOPE_CAT]) || (r[DB_COL.SCOPE_CAT] || '').toUpperCase().includes('BELUM'))).length;
+                const scopeTidakPerlu = data.filter(r => (r[DB_COL.SCOPE] || '').toUpperCase().includes('TIDAK PERLU')).length;
+                const scopeCicir = data.filter(r => (r[DB_COL.SCOPE] || '').toUpperCase().includes('CICIR')).length;
+                const scopeEnggan = data.filter(r => (r[DB_COL.SCOPE] || '').toUpperCase().includes('REFUSED')).length;
+                const scopeBelum = data.filter(r => (r[DB_COL.SCOPE] || '').toUpperCase().includes('BELUM DIJALANKAN')).length;
+
+                return { total, pos, setuju, enggan, hadirTca, cicirTca, belumTca, scopeHadir, scopeNormal, scopePolyps, scopeKanser, scopeLain, scopeBelumRes, scopeTidakPerlu, scopeCicir, scopeEnggan, scopeBelum };
+            };
+
+            const s = calc(sData), k = calc(kData);
+            const subs = { '4a': "KUMPULAN SASAR (SARINGAN): LELAKI DAN WANITA BERUMUR 50-75 TAHUN TANPA GEJALA", '4b': "KUMPULAN SASAR: LELAKI DAN WANITA (≥ 18 TAHUN) DENGAN TANDA DAN GEJALA", '4c': "KUMPULAN SASAR: LELAKI DAN WANITA BERISIKO TINGGI ATAU SEDERHANA" };
+            document.getElementById('retenTitle').innerText = `FORMAT RETEN 4(${currentRetenType.toUpperCase()})(iii)`;
+            document.getElementById('retenSubtitle').innerText = subs[currentRetenType];
+
+            const pct = (n, d) => d > 0 ? ((n/d)*100).toFixed(1) : "0.0";
+            const rows = [
+                { id:"1", label:"Jumlah klien disaring / dikesan", sv:s.total, sp:"-", kv:k.total, kp:"-", d: "" },
+                { id:"2", label:"Klien positif (iFOBT)", sv:s.pos, sp:pct(s.pos, s.total), kv:k.pos, kp:pct(k.pos, k.total), d:"Sasaran Disaring" },
+                { id:"3", label:"Klien setuju dirujuk ke SOPD/Gastro", sv:s.setuju, sp:pct(s.setuju, (currentRetenType==='4a'?s.pos:s.total)), kv:k.setuju, kp:pct(k.setuju, (currentRetenType==='4a'?k.pos:k.total)), d: (currentRetenType==='4a'?"Positif iFOBT":"Jumlah Gejala") },
+                { id:"4", label:"Klien enggan dirujuk ke SOPD/Gastro", sv:s.enggan, sp:pct(s.enggan, (currentRetenType==='4a'?s.pos:s.total)), kv:k.enggan, kp:pct(k.enggan, (currentRetenType==='4a'?k.pos:k.total)), d: (currentRetenType==='4a'?"Positif iFOBT":"Jumlah Gejala") },
+                { id:"5", label:"Surat rujukan hospital diberi (KPI KKM)", sv:s.setuju, sp:pct(s.setuju, (currentRetenType==='4a'?s.pos:s.total)), kv:k.setuju, kp:pct(k.setuju, (currentRetenType==='4a'?k.pos:k.total)), d: (currentRetenType==='4a'?"Positif iFOBT":"Jumlah Gejala") },
+                { id:"6", label:"Klien hadir temujanji SOPD/Gastro", sv:s.hadirTca, sp:pct(s.hadirTca, s.setuju), kv:k.hadirTca, kp:pct(k.hadirTca, k.setuju), d: "Setuju Rujuk" },
+                { id:"7", label:"Klien tidak hadir temujanji (cicir/default)", sv:s.cicirTca, sp:pct(s.cicirTca, s.setuju), kv:k.cicirTca, kp:pct(k.cicirTca, k.setuju), d: "Setuju Rujuk" },
+                { id:"8", label:"Klien belum sampai temujanji", sv:s.belumTca, sp:pct(s.belumTca, s.setuju), kv:k.belumTca, kp:pct(k.belumTca, k.setuju), d: "Setuju Rujuk" },
+                { id:"9", label:"<strong>Klien tidak menjalani kolonoskopi:</strong>", sv:"", sp:"", kv:"", kp:"", d:"" },
+                { id:"9.1", label:"&nbsp;&nbsp;9.1 Kolonoskopi tidak perlu (Pakar)", sv:s.scopeTidakPerlu, sp:pct(s.scopeTidakPerlu, s.setuju), kv:k.scopeTidakPerlu, kp:pct(k.scopeTidakPerlu, k.setuju), d:"Setuju Rujuk" },
+                { id:"9.2", label:"&nbsp;&nbsp;9.2 Cicir (default)", sv:s.scopeCicir, sp:pct(s.scopeCicir, s.setuju), kv:k.scopeCicir, kp:pct(k.scopeCicir, k.setuju), d:"Setuju Rujuk" },
+                { id:"9.3", label:"&nbsp;&nbsp;9.3 Enggan kolonoskopi (defaulted)", sv:s.scopeEnggan, sp:pct(s.scopeEnggan, s.setuju), kv:k.scopeEnggan, kp:pct(k.scopeEnggan, k.setuju), d:"Setuju Rujuk" },
+                { id:"10", label:"Kolonoskopi belum dijalankan", sv:s.scopeBelum, sp:pct(s.scopeBelum, s.setuju), kv:k.scopeBelum, kp:pct(k.scopeBelum, k.setuju), d:"Setuju Rujuk" },
+                { id:"11", label:"<strong>Kes sebenar menjalani kolonoskopi</strong>", sv:s.scopeHadir, sp:pct(s.scopeHadir, s.setuju), kv:k.scopeHadir, kp:pct(k.scopeHadir, k.setuju), d:"Setuju Rujuk" },
+                { id:"12", label:"<strong>Keputusan Kolonoskopi:</strong>", sv:"", sp:"", kv:"", kp:"", d:"" },
+                { id:"12.1", label:"&nbsp;&nbsp;12.1 Kanser kolorektal", sv:s.scopeKanser, sp:pct(s.scopeKanser, s.scopeHadir), kv:k.scopeKanser, kp:pct(k.scopeKanser, k.scopeHadir), d:"Hadir Scope" },
+                { id:"12.2", label:"&nbsp;&nbsp;12.2 Colonic Polyps", sv:s.scopePolyps, sp:pct(s.scopePolyps, s.scopeHadir), kv:k.scopePolyps, kp:pct(k.scopePolyps, k.scopeHadir), d:"Hadir Scope" },
+                { id:"12.3", label:"&nbsp;&nbsp;12.3 Normal", sv:s.scopeNormal, sp:pct(s.scopeNormal, s.scopeHadir), kv:k.scopeNormal, kp:pct(k.scopeNormal, k.scopeHadir), d:"Hadir Scope" },
+                { id:"12.4", label:"&nbsp;&nbsp;12.4 Lain-lain diagnosa*", sv:s.scopeLain, sp:pct(s.scopeLain, s.scopeHadir), kv:k.scopeLain, kp:pct(k.scopeLain, k.scopeHadir), d:"Hadir Scope" },
+                { id:"12.5", label:"&nbsp;&nbsp;12.5 Keputusan belum diperolehi", sv:s.scopeBelumRes, sp:pct(s.scopeBelumRes, s.scopeHadir), kv:k.scopeBelumRes, kp:pct(k.scopeBelumRes, k.scopeHadir), d:"Hadir Scope" },
+                { id:"12.6", label:"&nbsp;&nbsp;12.6 Jumlah keputusan diperolehi", sv:(s.scopeHadir-s.scopeBelumRes), sp:pct((s.scopeHadir-s.scopeBelumRes), s.scopeHadir), kv:(k.scopeHadir-k.scopeBelumRes), kp:pct((k.scopeHadir-k.scopeBelumRes), k.scopeHadir), d:"Hadir Scope" }
+            ];
+
+            let html = "";
+            rows.forEach(r => {
+                html += `<tr>
+                    <td style="text-align:center;">${r.id}</td>
+                    <td>${r.label}</td>
+                    <td style="text-align:center;">${fmt(r.sv)}</td>
+                    <td style="text-align:center; font-weight:700;">${r.sp !== "-" ? r.sp + "%" : "-"}</td>
+                    <td style="text-align:center;">${fmt(r.kv)}</td>
+                    <td style="text-align:center; font-weight:700;">${r.kp !== "-" ? r.kp + "%" : "-"}</td>
+                </tr>`;
             });
-
-            let h = `<table><thead><tr><th>PKD</th><th>Jumlah</th><th>Positif</th><th>Negatif</th><th>Positiviti (%)</th><th>Scope</th></tr></thead><tbody>`;
-            Object.keys(sum).sort().forEach(p => {
-                const s = sum[p];
-                h += `<tr><td><strong>${p}</strong></td><td>${s.total}</td><td style="color:#ef4444">${s.pos}</td><td style="color:#10b981">${s.neg}</td><td>${s.total?((s.pos/s.total)*100).toFixed(1):0}%</td><td>${s.scope}</td></tr>`;
-            });
-            document.getElementById('reten-content').innerHTML = h + `</tbody></table>`;
+            document.getElementById('retenBody').innerHTML = html;
         }
 
-        function exportToPDF() {
+        async function exportRetenPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF('p', 'mm', 'a4');
-            doc.text("Laporan Reten 4(" + appState.activeReten.slice(-1) + ") - Kedah 2026", 105, 15, { align:'center'});
-            doc.autoTable({ html: '#reten-content table', startY: 25, headStyles: { fillColor: [30,64,175] } });
-            doc.save(`Laporan_Reten_4${appState.activeReten}.pdf`);
+            const pkd = document.getElementById('filterDaerah').value || "NEGERI KEDAH";
+            const month = document.getElementById('filterMonthReport').value || "TAHUNAN";
+            
+            doc.setFontSize(10);
+            doc.text("FORMAT RETEN PROGRAM SARINGAN KANSER KOLOREKTAL KKM", 105, 10, { align: 'center' });
+            doc.setFontSize(9);
+            doc.text(`DAERAH: ${pkd} | BULAN: ${month} (2026)`, 105, 16, { align: 'center' });
+            doc.text(document.getElementById('retenTitle').innerText, 105, 22, { align: 'center' });
+
+            doc.autoTable({
+                html: '#tableReten',
+                startY: 28,
+                theme: 'grid',
+                styles: { fontSize: 7, cellPadding: 2 },
+                headStyles: { fillColor: [30, 64, 175], textColor: 255, halign: 'center' },
+                columnStyles: {
+                    0: { halign: 'center', cellWidth: 10 },
+                    2: { halign: 'center' },
+                    3: { halign: 'center', fontStyle: 'bold' },
+                    4: { halign: 'center' },
+                    5: { halign: 'center', fontStyle: 'bold' }
+                }
+            });
+            doc.save(`Reten_${currentRetenType}_${pkd}_${month}.pdf`);
         }
 
         function num(v) { return v ? parseFloat(String(v).split(',').join('').replace(/[^0-9.\-]/g, '')) || 0 : 0; }
