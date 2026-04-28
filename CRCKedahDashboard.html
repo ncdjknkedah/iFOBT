@@ -1190,8 +1190,6 @@
             // New Report PKD Filter
             const rPkd = document.getElementById('filterPKDReport');
             if(rPkd) {
-                const pkds = ["BALING", "BANDAR BAHARU", "KOTA SETAR", "KUALA MUDA", "KUBANG PASU", "KULIM", "LANGKAWI", "PADANG TERAP", "PENDANG", "SIK", "YAN"];
-                pkds.sort();
                 const pkdOpts = ["KEDAH", ...pkds];
                 rPkd.innerHTML = '';
                 pkdOpts.forEach(p => {
