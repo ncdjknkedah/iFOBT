@@ -702,7 +702,14 @@
         const SHEETS = {
             stok2025: '1888588564',
             stok2026: '1668827922',
-            database: '683531209'
+            database: '683531209',
+            analisa: '0'
+        };
+
+        const PKD_ROW_MAP = {
+            "": 3, "BALING": 26, "BANDAR BAHARU": 49, "KOTA SETAR": 72, 
+            "KUALA MUDA": 95, "KUBANG PASU": 118, "KULIM": 141, "LANGKAWI": 164, 
+            "PADANG TERAP": 187, "PENDANG": 210, "SIK": 233, "YAN": 256
         };
 
         // ==========================================
@@ -772,10 +779,12 @@
             try {
                 lucide.createIcons();
                 // Fetch all data
-                const [s25, s26] = await Promise.all([
+                const [s25, s26, analisaRaw] = await Promise.all([
                     fetchCSV(STOCK_ID, SHEETS.stok2025),
-                    fetchCSV(STOCK_ID, SHEETS.stok2026)
+                    fetchCSV(STOCK_ID, SHEETS.stok2026),
+                    fetchCSV(ACTIVITY_ID, SHEETS.analisa)
                 ]);
+                appState.analisaData = analisaRaw;
 
                 const sheetUrl = `https://docs.google.com/spreadsheets/d/${ACTIVITY_ID}/gviz/tq?tqx=out:csv&gid=${SHEETS.database}`;
                 const res = await fetch(sheetUrl);
